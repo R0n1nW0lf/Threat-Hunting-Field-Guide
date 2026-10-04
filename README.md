@@ -15,23 +15,6 @@ Choose a hunting question, identify the evidence that can answer it, test compet
 
 **Source limitation:** the exact five official LetsDefend Threat Hunting Life Cycle stage names remain unverified. The lifecycle section flags this explicitly and keeps the two requested practical workflows separate from official lesson terminology.
 
-## Contents
-
-- [Threat Hunting Introduction](#threat-hunting-introduction)
-- [Threat Hunting Methodologies](#threat-hunting-methodologies)
-- [Threat Hunting Life Cycle](#threat-hunting-life-cycle)
-- [Threat Hunting Tools and Data Collection](#threat-hunting-tools-and-data-collection)
-- [Data Analysis Tools](#data-analysis-tools)
-- [Network Monitoring Tools](#network-monitoring-tools)
-- [Network and System Monitoring Context](#network-and-system-monitoring-context)
-- [Wazuh / OpenSearch Threat Hunting Filter Field Guide](#wazuh--opensearch-threat-hunting-filter-field-guide)
-- [Worked Hunt from Hypothesis to Action](#worked-hunt-from-hypothesis-to-action)
-- [Ronald Hands On Revisit Plans](#ronald-hands-on-revisit-plans)
-- [Editable Hunt Worksheet](#editable-hunt-worksheet)
-
-**Hands-on revisit priorities:** [Snort, Zeek, and Vectra NDR](#ronald-hands-on-revisit-plans).
-
-Last updated: October 4, 2026.
 ## Quick Find
 
 Use these links to jump directly to the section you need during a hunt.
