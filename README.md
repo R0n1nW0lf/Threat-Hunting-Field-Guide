@@ -33,6 +33,29 @@ Choose a hunting question, identify the evidence that can answer it, test compet
 **Hands-on revisit priorities:** [Snort, Zeek, and Vectra NDR](#ronald-hands-on-revisit-plans).
 
 Last updated: October 4, 2026.
+## Quick Find
+
+Use these links to jump directly to the section you need during a hunt.
+
+| I am looking for... | Go to |
+| --- | --- |
+| Threat hunting basics and proactive vs reactive | [Threat Hunting Introduction](#threat-hunting-introduction) |
+| Adversary, hypothesis, or IoC hunting methods | [Threat Hunting Methodologies](#threat-hunting-methodologies) |
+| Hunt lifecycle and workflow | [Threat Hunting Life Cycle](#threat-hunting-life-cycle) |
+| Collection tools and telemetry | [Threat Hunting Tools and Data Collection](#threat-hunting-tools-and-data-collection) |
+| Splunk, ELK, or LogRhythm | [Data Analysis Tools](#data-analysis-tools) |
+| Wireshark, Snort, Zeek, or Vectra | [Network Monitoring Tools](#network-monitoring-tools) |
+| PRTG, Nagios, or monitoring context | [Network and System Monitoring Context](#network-and-system-monitoring-context) |
+| Wazuh/OpenSearch fields and filters | [Wazuh / OpenSearch Threat Hunting Filter Field Guide](#wazuh--opensearch-threat-hunting-filter-field-guide) |
+| A complete example hunt | [Worked Hunt from Hypothesis to Action](#worked-hunt-from-hypothesis-to-action) |
+| Hands-on practice plans | [Ronald Hands On Revisit Plans](#ronald-hands-on-revisit-plans) |
+| Hunt notes/report template | [Editable Hunt Worksheet](#editable-hunt-worksheet) |
+| References and terminology checks | [Sources and Terminology Verification](#sources-and-terminology-verification) |
+
+[Back to top](#threat-hunting-field-guide)
+
+
+[Back to top](#threat-hunting-field-guide)
 
 ## Threat Hunting Introduction
 
@@ -63,6 +86,8 @@ The following is a practical division of responsibilities, not a recovered list 
 
 Build competencies in network protocols; Windows and endpoint activity; log searching and correlation; TTPs and MITRE ATT&CK; threat intelligence evaluation; scripting; and clear reporting. Critical thinking connects them: ask what would disprove your explanation, and seek that evidence.
 
+[Back to top](#threat-hunting-field-guide)
+
 ## Threat Hunting Methodologies
 
 **Study recap with practical analyst notes**
@@ -92,6 +117,8 @@ Ask: “Did this indicator appear here, and what happened around the match?” V
 | IoC-Based | Where and when did this indicator appear? | Validate the match and expand into behavior. |
 
 Practical analyst note: these methods can work together. An IoC hit can seed a hypothesis, and a TTP hunt can reveal new indicators. Keep the starting rationale and later pivots in the record.
+
+[Back to top](#threat-hunting-field-guide)
 
 ## Threat Hunting Life Cycle
 
@@ -125,6 +152,8 @@ The reasoning workflow fits inside the broader hunt workflow. Hypothesis helps P
 
 Escalate credible evidence of active compromise promptly. Do not wait for the report to be finished. If required data is absent, record an inconclusive result and a collection improvement rather than treating the hypothesis as disproved.
 
+[Back to top](#threat-hunting-field-guide)
+
 ## Threat Hunting Tools and Data Collection
 
 **Study recap**
@@ -153,6 +182,8 @@ Example: Windows activity → Sysmon events → Winlogbeat or NXLog → an analy
 - Compare source timestamp, ingestion timestamp, hostname, event type, and key fields.
 
 - Check retention and gaps. A shipper cannot recover events that were never logged.
+
+[Back to top](#threat-hunting-field-guide)
 
 ## Data Analysis Tools
 
@@ -187,6 +218,8 @@ Practical analyst note: inspect the raw events behind a correlated finding. Norm
 
 Start broad enough to understand the population, then narrow by entity and time. Count affected hosts, compare with peer systems, and inspect representative events. Record queries and exclusions so another analyst can reproduce the result. Use the search language and schema of the actual platform; field names are not interchangeable.
 
+[Back to top](#threat-hunting-field-guide)
+
 ## Network Monitoring Tools
 
 **Study recap and reference notes**
@@ -219,6 +252,8 @@ Practical analyst note: begin with conn.log for connection metadata; pivot to dn
 Lesson recap: Network Detection and Response monitors network traffic and uses AI and machine learning to surface abnormal behavior. Practical analyst note: investigate the behavior explanation, affected entity, timing, and related activity; compare with approved operations. An AI/ML finding still needs corroboration and a defensible analyst conclusion. [14]
 
 **Ronald's hands-on revisit priority: Vectra NDR**
+
+[Back to top](#threat-hunting-field-guide)
 
 ## Network and System Monitoring Context
 
@@ -254,6 +289,8 @@ Question: “Something abnormal happened to a system or service. Does it have se
 | Vectra behavioral finding | Related activity and independent telemetry | Is the behavior authorized and consistent with the asset's role? |
 
 Practical analyst rule: anomalies establish a reason to investigate. They do not establish attacker intent. Align time zones and use the asset's actual role before connecting events into a narrative.
+
+[Back to top](#threat-hunting-field-guide)
 
 ## Wazuh / OpenSearch Threat Hunting Filter Field Guide
 
@@ -307,6 +344,8 @@ Example: “Find failed SSH authentication originating from 172.16.8.190.”
 
 Practical rule: first understand what the question is asking, then identify which field represents each part of the question. Use the filtered results as evidence and verify the underlying event before reporting a conclusion.
 
+[Back to top](#threat-hunting-field-guide)
+
 ## Worked Hunt from Hypothesis to Action
 
 **Practical analyst example only**
@@ -340,6 +379,8 @@ Compare with approved software and peer hosts. Check scheduled jobs, update serv
 ### Action and improvement
 
 Assign an owner to response, logging fixes, or detection tuning. Preserve the evidence and query history. Record the follow-up hypothesis if the hunt reveals a wider pattern. Avoid claiming “the environment is clean” from a limited hunt.
+
+[Back to top](#threat-hunting-field-guide)
 
 ## Ronald Hands On Revisit Plans
 
@@ -382,6 +423,8 @@ Goal: validate a behavioral detection. Use an authorized training tenant or supp
 - Record whether evidence supports compromise, supports a benign cause, or is inconclusive.
 
 Completion evidence: detection details, corroboration, limitations, and the analyst decision. Ask: “Why is this behavior suspicious in this environment?”
+
+[Back to top](#threat-hunting-field-guide)
 
 ## Editable Hunt Worksheet
 
@@ -431,6 +474,8 @@ Detection or collection improvement: _______________________________
 - Does the conclusion respect the coverage, time window, and uncertainty?
 
 - Are the response, improvement, and follow-up actions assigned?
+
+[Back to top](#threat-hunting-field-guide)
 
 ## Sources and Terminology Verification
 
