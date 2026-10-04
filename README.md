@@ -28,7 +28,6 @@ Choose a hunting question, identify the evidence that can answer it, test compet
 - [Worked Hunt from Hypothesis to Action](#worked-hunt-from-hypothesis-to-action)
 - [Ronald Hands On Revisit Plans](#ronald-hands-on-revisit-plans)
 - [Editable Hunt Worksheet](#editable-hunt-worksheet)
-- [Sources and Terminology Verification](#sources-and-terminology-verification)
 
 **Hands-on revisit priorities:** [Snort, Zeek, and Vectra NDR](#ronald-hands-on-revisit-plans).
 
@@ -50,7 +49,6 @@ Use these links to jump directly to the section you need during a hunt.
 | A complete example hunt | [Worked Hunt from Hypothesis to Action](#worked-hunt-from-hypothesis-to-action) |
 | Hands-on practice plans | [Ronald Hands On Revisit Plans](#ronald-hands-on-revisit-plans) |
 | Hunt notes/report template | [Editable Hunt Worksheet](#editable-hunt-worksheet) |
-| References and terminology checks | [Sources and Terminology Verification](#sources-and-terminology-verification) |
 
 [Back to top](#threat-hunting-field-guide)
 
@@ -474,48 +472,3 @@ Detection or collection improvement: _______________________________
 - Does the conclusion respect the coverage, time window, and uncertainty?
 
 - Are the response, improvement, and follow-up actions assigned?
-
-[Back to top](#threat-hunting-field-guide)
-
-## Sources and Terminology Verification
-
-This handbook combines Ronald's requested study scope, recovered project discussion, and the official references below. Bracketed reference numbers identify supporting documentation; added examples and workflows are marked as practical analyst notes. Reviewed October 2, 2026.
-
-Project reference: the recovered discussion from Continue SOC Analyst Part 4 covered Vectra NDR, PRTG, Nagios, and the handbook request. Earlier lesson material was unavailable; the guide marks the resulting terminology gap.
-
-[1] [LetsDefend Introduction to Threat Hunting](https://app.letsdefend.io/training/lessons/introduction-to-threat-hunting)
-
-[2] [LetsDefend Threat Hunting Tools](https://app.letsdefend.io/training/lessons/threat-hunting-tools)
-
-[3] [MITRE ATT&CK knowledge base](https://attack.mitre.org/)
-
-[4] [Microsoft Sysmon documentation](https://learn.microsoft.com/en-us/sysinternals/downloads/sysmon)
-
-[5] [Elastic Winlogbeat overview](https://www.elastic.co/guide/en/beats/winlogbeat/current/_winlogbeat_overview.html)
-
-[6] [NXLog Windows log collection](https://docs.nxlog.co/userguide/os/windows.html)
-
-[7] [Graylog documentation](https://go2docs.graylog.org/current/what_is_graylog/what_is_graylog.htm)
-
-[8] [Splunk search documentation](https://help.splunk.com/en/splunk-enterprise/search/search-manual)
-
-[9] [Elastic Stack documentation](https://www.elastic.co/docs/get-started/the-stack)
-
-[10] [LogRhythm Advanced Intelligence Engine](https://logrhythm.com/wp-content/uploads/2020/03/advanced-intelligence-engine-data-sheet.pdf)
-
-[11] [Wireshark User Guide](https://www.wireshark.org/docs/wsug_html_chunked/index.html)
-
-[12] [Snort 3 rules documentation](https://docs.snort.org/start/rules)
-
-[13] [Zeek logs documentation](https://docs.zeek.org/en/v8.2.0/tutorial/logs.html)
-
-[14] [Vectra AI platform](https://www.vectra.ai/platform)
-
-[15] [PRTG sensors](https://www.paessler.com/prtg/features/sensors)
-
-[16] [Nagios plugins](https://www.nagios.org/downloads/nagios-plugins/)
-
-### Open terminology item
-
-Verify all five official LetsDefend Threat Hunting Life Cycle stage names and descriptions from the original lesson before using the lifecycle section for lesson recall. The practical workflows are preserved exactly as requested. The team role matrix is added analyst guidance, not an official lesson list.
-
