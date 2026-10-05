@@ -325,6 +325,34 @@ Example: “Find failed SSH authentication originating from 172.16.8.190.”
 
 Practical rule: first understand what the question is asking, then identify which field represents each part of the question. Use the filtered results as evidence and verify the underlying event before reporting a conclusion.
 
+### Lessons reinforced from hands-on VPN, SSH, FTP, and Audit hunts
+
+**Translate question wording into stacked filters.** Break the question into evidence concepts, then map each concept to a field or rule group. For example, a service can map to a service-specific `rule.groups` value, a successful login to `authentication_success`, and an account name to `data.dstuser`. Stack only filters justified by the question, then inspect the remaining event.
+
+**Use rule groups to narrow behavior before searching raw text.** Service and behavior groups such as `ftp`, `sshd`, `audit`, `authentication_success`, and `authentication_failed` can quickly reduce the event population. Remove filters that belong to a previous question when the new question changes the behavior being investigated.
+
+**Do not confuse hit count with unique count or frequency.** A question asking for the “most frequent” value requires counting occurrences across the full result set. A question asking for “unique destinations” requires counting distinct destination values. Visible rows or total hits alone are not proof.
+
+**Use `full_log` as a fallback for unparsed evidence.** Wazuh may parse many useful fields while leaving another needed value only in the original log. If the expected field is missing, inspect `full_log` before concluding that the evidence is unavailable. Raw logs can also translate numeric identities into names, such as Linux UID 0 appearing as `root`.
+
+**Correlate by time, not just by IP or username.** The same address or account can appear in unrelated activity elsewhere in the hunting window. Anchor pivots to the relevant session or event time and follow activity forward or backward from that point.
+
+**Pivot across telemetry instead of expecting one log source to answer everything.** A practical chain can move from VPN authentication to a tunnel IP, then firewall traffic, SSH authentication, and finally endpoint Audit events. Each source answers a different part of the story.
+
+**Understand endpoint-reported destinations.** In host-generated SSH events, `data.srcip` identifies the connecting system while `agent.ip` identifies the monitored endpoint whose SSH daemon reported the event. A destination does not always appear as `data.dstip`.
+
+**Reconstruct Linux Audit commands from `execve` arguments.** `data.audit.command` may expose only the base command. Read `data.audit.execve.a0`, `a1`, `a2`, and later arguments in order to reconstruct the command line, identify command targets, or recover a full file path passed to an editor. For example, the arguments can distinguish running `ps` from searching its output for a particular process.
+
+**Follow configuration changes into service activity.** When a question asks what happened before a service restart, use the restart as a timeline anchor and inspect preceding Audit activity on the same endpoint. An editor command plus a configuration-file argument can establish which service-related file was changed and which user performed the action.
+
+**Expand the correct event for enrichment.** Once the event is isolated, expanded fields can provide information not shown in the normal result row, such as IP geolocation. Treat enrichment as context associated with the event and keep the underlying source IP visible.
+
+**SIEM value in threat hunting comes from collection, analysis, and correlation.** SIEM centralizes telemetry so hunters can connect user activity, network traffic, authentication, and endpoint evidence. SOAR complements SIEM by automating and orchestrating repeatable security workflows.
+
+**Use hypotheses as testable starting points, not conclusions.** Begin with data analysis and preliminary review, use relevant telemetry to test the hypothesis, and revise or create a new hypothesis when the evidence does not validate it. Do not force evidence to fit the original idea.
+
+**Use MITRE ATT&CK to describe behavior, then verify the underlying evidence.** ATT&CK Tactics, Techniques, and Procedures provide a common framework for hunting. A technique label such as Process Discovery is a useful pivot, but the audit or endpoint evidence should show what actually occurred.
+
 [Back to top](#threat-hunting-field-guide)
 
 ## Worked Hunt from Hypothesis to Action
