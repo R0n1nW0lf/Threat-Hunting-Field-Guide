@@ -372,6 +372,34 @@ The important lesson is not to memorize `1033` first. The reusable skill is disc
 
 Practical warning: a monitoring event may not contain the Windows Event ID at all. The monitoring alert is the starting condition; the endpoint telemetry is the next evidence source.
 
+### Hunt embedded hash IOCs with wildcards
+
+When a known hash IOC is visibly present in telemetry but exact SIEM searches return zero results, test whether the hash is embedded inside a larger searchable value.
+
+In the hands-on hunt, these approaches did **not** return the expected event:
+
+- Bare MD5 value
+- `MD5=<hash>` without wildcards
+- Exact filtering on `data.win.eventdata.hashes`
+
+The working search was:
+
+`*MD5=<hash>*`
+
+Example pattern:
+
+`*MD5=514CF8AS644F22924DA63989F3B56CD9*`
+
+This returned the matching Sysmon process telemetry and exposed the additional affected endpoint and miner process.
+
+**Why this matters:** Sysmon hash telemetry can be stored as a larger combined value containing multiple hash types, such as `SHA1=...,MD5=...,SHA256=...,IMPHASH=...`. An exact lookup for only the MD5 may therefore fail. Leading and trailing `*` wildcards perform a contains-style search for the embedded `MD5=<hash>` sequence.
+
+Reusable hunting workflow:
+
+**CTI hash IOC → identify hash type → search `*<TYPE>=<hash>*` → inspect matching event → pivot to `agent.name`, image/path, process, user, and surrounding telemetry**
+
+Do not treat an exact-search miss as proof that an IOC is absent when the telemetry may store that IOC inside a larger field. Test the representation and wildcard search before concluding there is no match.
+
 **Use hypotheses as testable starting points, not conclusions.** Begin with data analysis and preliminary review, use relevant telemetry to test the hypothesis, and revise or create a new hypothesis when the evidence does not validate it. Do not force evidence to fit the original idea.
 
 **Use MITRE ATT&CK to describe behavior, then verify the underlying evidence.** ATT&CK Tactics, Techniques, and Procedures provide a common framework for hunting. A technique label such as Process Discovery is a useful pivot, but the audit or endpoint evidence should show what actually occurred.
