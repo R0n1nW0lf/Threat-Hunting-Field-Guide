@@ -349,6 +349,29 @@ Practical rule: first understand what the question is asking, then identify whic
 
 **SIEM value in threat hunting comes from collection, analysis, and correlation.** SIEM centralizes telemetry so hunters can connect user activity, network traffic, authentication, and endpoint evidence. SOAR complements SIEM by automating and orchestrating repeatable security workflows.
 
+### Discover an unknown Windows Event ID from the evidence
+
+When a hunting question points to a host or behavior but you do **not** know the Event ID, do not guess the number and do not depend on a hint. Pivot from evidence you already proved.
+
+**Method: known condition → agent/host → all host telemetry → enumerate Event IDs → inspect behavior → identify the matching Event ID**
+
+1. Start with the event that established the condition, such as a system-monitoring alert.
+2. Extract the affected hostname or agent name.
+3. Remove the source-specific filter if it would hide other telemetry. For example, after identifying a host from a Zabbix alert, remove the Zabbix-only filter before investigating Windows events.
+4. Search the affected host across the full hunting time window.
+5. Open the available `data.win.system.eventID` field and enumerate the Event IDs present in the narrowed dataset.
+6. Filter or inspect those Event IDs and read their underlying event output.
+7. Match the event behavior to the hunting question. If the question asks what application was installed, look for an event whose data actually identifies an installation/application.
+8. Once the matching event is found, record its Event ID and use that ID as a repeatable filter for similar telemetry.
+
+Example reasoning from the hands-on hunt:
+
+**High CPU condition → identify affected agent → pivot to all events for that agent → inspect available Event IDs → find the event containing the miner application → observe Event ID 1033**
+
+The important lesson is not to memorize `1033` first. The reusable skill is discovering an unknown Event ID by narrowing to the correct agent and inspecting what each candidate event actually represents.
+
+Practical warning: a monitoring event may not contain the Windows Event ID at all. The monitoring alert is the starting condition; the endpoint telemetry is the next evidence source.
+
 **Use hypotheses as testable starting points, not conclusions.** Begin with data analysis and preliminary review, use relevant telemetry to test the hypothesis, and revise or create a new hypothesis when the evidence does not validate it. Do not force evidence to fit the original idea.
 
 **Use MITRE ATT&CK to describe behavior, then verify the underlying evidence.** ATT&CK Tactics, Techniques, and Procedures provide a common framework for hunting. A technique label such as Process Discovery is a useful pivot, but the audit or endpoint evidence should show what actually occurred.
