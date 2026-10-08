@@ -486,6 +486,37 @@ Completion evidence: detection details, corroboration, limitations, and the anal
 
 [Back to top](#threat-hunting-field-guide)
 
+
+## Hands-on EDR and CTI Hunting: Process to Firewall
+
+Use these Wazuh/OpenSearch filters to reconstruct an endpoint incident from observed telemetry. Rule-group names depend on the installed ruleset; verify the event content rather than assuming a filter proves the behavior.
+
+| Evidence question | Starting filter or field | Verification |
+| --- | --- | --- |
+| What process ran? | `rule.groups: sysmon_event1` (Sysmon Event ID 1) | `data.win.eventdata.image`, `commandLine`, `parentImage`, `processId` |
+| Was PowerShell encoded? | `rule.groups: encoded_command` with `sysmon_event1` | Find `-EncodedCommand` in the actual command line and extract the complete encoded value |
+| What IP did the process contact? | `rule.groups: sysmon_event3` (Sysmon Event ID 3), plus image/path | `data.win.eventdata.destinationIp`, `sourceIp`, process identity, timestamp |
+| What domain did it resolve? | Sysmon Event ID 22 (DNS query) | `data.win.eventdata.queryName`, `image`, and `queryResults` |
+| Did a firewall allow or deny traffic? | `rule.groups: firewall` and `data.dstip: <destination IP>` | `data.action`, `data.srcip`, `data.dstport`, `data.service`, time |
+
+### Encoded PowerShell and CTI pivot
+
+- Extract the value following `-EncodedCommand` from the complete process command line. Base64 is an encoding, not encryption. PowerShell's `-EncodedCommand` normally expects UTF-16LE bytes; verify the original bytes and decoded text rather than assuming every Base64 string is UTF-16LE.
+- Read the decoded command to identify URLs, IPs, file paths, and intent. A download command is evidence of attempted download, not by itself proof of successful file creation or execution.
+- Look up extracted indicators in Threat Intel. Record the IOC type, source, tag/group attribution, and confidence. Attribution from an IOC tag is not independent proof of the operator.
+- Pivot from a threat-group IOC hash back into Sysmon process events. For a hash embedded in a combined `SHA1=...,MD5=...,SHA256=...` value, try `*SHA1=<hash>*` or `*MD5=<hash>*` in the Discover search bar. Confirm the matching event's `hashes` field before trusting it.
+- In Sysmon Event 1, `image` identifies the created process; `parentImage` identifies the parent executable. `parentCommandLine` and process GUID/PID can help reconstruct the relationship.
+
+### Correlate endpoint and firewall evidence
+
+**Process create → hash match → parent process → Sysmon Event 3 destination → firewall destination filter → firewall action.**
+
+- Sysmon Event 3 records network connection telemetry, but does not alone establish that the firewall permitted the traffic.
+- Filtering firewall events by destination IP alone can return connections from *different* internal source hosts. In the practical exercise, the endpoint Sysmon event and one visible firewall event had different source IPs; the firewall search returned two hits. Inspect **all relevant hits** and compare source IP, destination IP, time, port, and protocol before attributing an allow/deny decision to a specific process or endpoint.
+- Hit count is not unique-host count. Do not conclude a particular connection was blocked solely because a firewall event to the same destination says `deny`.
+
+[Back to top](#threat-hunting-field-guide)
+
 ## Editable Hunt Worksheet
 
 **Practical analyst template**
