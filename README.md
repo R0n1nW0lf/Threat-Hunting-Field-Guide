@@ -4,6 +4,8 @@ A practical standalone handbook for Ronald, developed from the SOC Analyst proje
 
 **The tool provides evidence. The analyst decides what the evidence means.**
 
+**START HERE:** [Step-by-Step Evidence Tracking: Evidence First](#step-by-step-evidence-tracking-evidence-first) — learn how to locate, narrow, correlate, and verify evidence.
+
 ## How to use this handbook
 
 Choose a hunting question, identify the evidence that can answer it, test competing explanations, and record a defensible conclusion. Tool entries emphasize what question the tool answers and what to inspect next.
@@ -21,6 +23,7 @@ Use these links to jump directly to the section you need during a hunt.
 
 | I am looking for... | Go to |
 | --- | --- |
+| Evidence-first investigation: step-by-step | [Step-by-Step Evidence Tracking: Evidence First](#step-by-step-evidence-tracking-evidence-first) |
 | Threat hunting basics and proactive vs reactive | [Threat Hunting Introduction](#threat-hunting-introduction) |
 | Adversary, hypothesis, or IoC hunting methods | [Threat Hunting Methodologies](#threat-hunting-methodologies) |
 | Hunt lifecycle and workflow | [Threat Hunting Life Cycle](#threat-hunting-life-cycle) |
