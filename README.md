@@ -517,6 +517,23 @@ Use these Wazuh/OpenSearch filters to reconstruct an endpoint incident from obse
 
 [Back to top](#threat-hunting-field-guide)
 
+## Step-by-Step Evidence Tracking: Evidence First
+
+Use this method for unfamiliar threat-hunting questions. The goal is to **find and validate evidence independently**, not reverse-engineer an answer from a hint.
+
+1. **Translate the question into an evidence target.** Write down the behavior being investigated, the time window, any known host or IOC, and the exact output requested (IP, command, URL, group, executable, technique ID, or action). Separate confirmed facts from assumptions.
+2. **Set the correct time range.** Check timezone and ensure the start and end cover the requested activity. A wrong time window can make good filters appear broken.
+3. **Start with a confirmed anchor.** Search by a known `agent.ip`, `agent.name`, process, domain, IOC, or relevant event text. Do not begin with an unverified MITRE ID just because one sounds plausible.
+4. **Explore before narrowing.** Inspect event counts, timestamps, `rule.description`, `rule.groups`, and available fields. Expand representative raw events; the top-values panel is not a complete list of values.
+5. **Narrow one condition at a time.** Add a relevant process, keyword, field, or wildcard search; observe how the hit count changes. If zero results appear, remove the last constraint and reconsider the field, syntax, event source, or time range. Do not treat zero hits as proof the activity never occurred.
+6. **Follow the behavior to the next evidence source.** Process creation can reveal `commandLine`, `image`, `originalFileName`, and parent process; DNS or network events can reveal contacted destinations; Windows security and firewall events can establish other actions. Not every source records every field.
+7. **Discover and verify MITRE mappings.** First observe what the event actually describes. Read `rule.mitre.id` and `rule.mitre.technique` when available. If absent, research the behavior in MITRE ATT&CK as a **hypothesis**, then check whether the event supports it. Detection mappings can differ and may be missing.
+8. **Correlate without conflating.** Compare host, account, PID, process lineage, timestamps, source/destination addresses, and actions across events. `agent.ip` is the reporting endpoint, not automatically the network source; a process execution or connection attempt alone does not prove success.
+9. **Return to the exact requested field.** Distinguish `commandLine` (full invocation), `image` (executable path), and `originalFileName` (embedded original filename). Copy the recorded value exactly, including unexpected spellings, and verify it in the raw event.
+10. **Report evidence, uncertainty, and lesson.** Record the answer with its supporting timestamp, host, field, and event. State what is observed versus inferred; do not claim intent, success, or attribution without corroboration. Save reusable search techniques rather than copying lab-specific answers.
+
+**Investigation flow:** Question → Known facts → Broad search → Event inspection → Progressive filters → Correlation → MITRE verification → Exact-field confirmation → Report.
+
 ## Editable Hunt Worksheet
 
 **Practical analyst template**
