@@ -31,6 +31,7 @@ Use these links to jump directly to the section you need during a hunt.
 | Splunk, ELK, or LogRhythm | [Data Analysis Tools](#data-analysis-tools) |
 | Wireshark, Snort, Zeek, or Vectra | [Network Monitoring Tools](#network-monitoring-tools) |
 | PRTG, Nagios, or monitoring context | [Network and System Monitoring Context](#network-and-system-monitoring-context) |
+| SIEM source/destination field cheat sheet | [SIEM Field Quick Reference: Traffic Direction](#siem-field-quick-reference-traffic-direction) |
 | Wazuh/OpenSearch fields and filters | [Wazuh / OpenSearch Threat Hunting Filter Field Guide](#wazuh--opensearch-threat-hunting-filter-field-guide) |
 | A complete example hunt | [Worked Hunt from Hypothesis to Action](#worked-hunt-from-hypothesis-to-action) |
 | Hands-on practice plans | [Ronald Hands On Revisit Plans](#ronald-hands-on-revisit-plans) |
@@ -536,6 +537,33 @@ Use this method for unfamiliar threat-hunting questions. The goal is to **find a
 10. **Report evidence, uncertainty, and lesson.** Record the answer with its supporting timestamp, host, field, and event. State what is observed versus inferred; do not claim intent, success, or attribution without corroboration. Save reusable search techniques rather than copying lab-specific answers.
 
 **Investigation flow:** Question → Known facts → Broad search → Event inspection → Progressive filters → Correlation → MITRE verification → Exact-field confirmation → Report.
+
+## SIEM Field Quick Reference: Traffic Direction
+
+Keep this table on a dedicated notes screen during investigations. These examples reflect Wazuh-style parsed fields; field availability varies by event source.
+
+| Field | Meaning | Quick question |
+| --- | --- | --- |
+| `data.srcip` | Source IP in a network event | Where did this traffic come from? |
+| `data.dstip` | Destination IP in a network event | Where was this traffic going? |
+| `agent.ip` | IP of the reporting/monitored agent | Which endpoint reported this event? |
+| `data.srcport` | Source port | Which port did the sender use? |
+| `data.dstport` | Destination port | Which service/port was targeted? |
+| `data.action` | Logged security-device action | Was the traffic allowed, denied, or dropped? |
+| `data.win.eventdata.queryName` | Domain requested in a Sysmon DNS query event | Which domain was queried? |
+| `data.win.eventdata.image` | Executable path in relevant Sysmon events | Which process was involved? |
+
+**Direction example:** `192.168.1.10 → 123.123.123.123` means `data.srcip: 192.168.1.10` and `data.dstip: 123.123.123.123` in a network event with those fields.
+
+- **Outbound to a suspicious IP:** start with `data.dstip`; verify the internal `data.srcip`, time, port, and action.
+- **Inbound from a suspicious IP:** start with `data.srcip`; verify the internal `data.dstip`, time, port, and action.
+- **Endpoint event:** `agent.ip` identifies the reporting endpoint and is **not automatically** the connection source or destination.
+- **Evidence caution:** `allow` does not prove a completed session or compromise; `deny`/`dropped` describe the observed enforcement action. Correlate independent events before concluding success.
+- **Search caution:** Some event sources use different field names or omit destination fields. Inspect the expanded raw event and confirm the time window, log source, and direction.
+
+**Notebook reminder:** Known facts → Field to check → Search → Raw event → Correlation → Verified finding.
+
+[Back to top](#threat-hunting-field-guide)
 
 ## Editable Hunt Worksheet
 
