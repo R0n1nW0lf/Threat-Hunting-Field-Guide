@@ -31,6 +31,7 @@ Use these links to jump directly to the section you need during a hunt.
 | Splunk, ELK, or LogRhythm | [Data Analysis Tools](#data-analysis-tools) |
 | Wireshark, Snort, Zeek, or Vectra | [Network Monitoring Tools](#network-monitoring-tools) |
 | PRTG, Nagios, or monitoring context | [Network and System Monitoring Context](#network-and-system-monitoring-context) |
+| Firewall threat hunting: baselines and outbound hypothesis | [Threat Hunting with Firewalls: Outbound Connection Hypothesis](#threat-hunting-with-firewalls-outbound-connection-hypothesis) |
 | SIEM source/destination field cheat sheet | [SIEM Field Quick Reference: Traffic Direction](#siem-field-quick-reference-traffic-direction) |
 | Wazuh/OpenSearch fields and filters | [Wazuh / OpenSearch Threat Hunting Filter Field Guide](#wazuh--opensearch-threat-hunting-filter-field-guide) |
 | A complete example hunt | [Worked Hunt from Hypothesis to Action](#worked-hunt-from-hypothesis-to-action) |
@@ -537,6 +538,52 @@ Use this method for unfamiliar threat-hunting questions. The goal is to **find a
 10. **Report evidence, uncertainty, and lesson.** Record the answer with its supporting timestamp, host, field, and event. State what is observed versus inferred; do not claim intent, success, or attribution without corroboration. Save reusable search techniques rather than copying lab-specific answers.
 
 **Investigation flow:** Question → Known facts → Broad search → Event inspection → Progressive filters → Correlation → MITRE verification → Exact-field confirmation → Report.
+
+## Threat Hunting with Firewalls: Outbound Connection Hypothesis
+
+**Lesson recap — LetsDefend Threat Hunting with Firewalls (Lessons 1–4).** Firewall logs provide source/destination, ports, protocols, timestamps, traffic volume, policy decisions, and patterns. Hunting begins by comparing observations with a baseline rather than assuming unusual traffic is malicious.
+
+### Hypothesis
+
+A specific internal IP address may suddenly generate a high number of outbound connection attempts to external IP addresses on unusual or rarely used ports. This is a testable hypothesis, **not a confirmed incident**.
+
+### Baseline before judging
+
+| Dimension | Establish normal behavior |
+| --- | --- |
+| Source and destination | Which hosts communicate, and with which external destinations? |
+| Port and protocol | Which services and protocols are expected for this host? |
+| Time and frequency | When and how often do connections normally occur? |
+| Volume | What byte counts, session counts, and transfer sizes are typical? |
+| Rules and actions | Which firewall policies usually allow or deny this traffic? |
+
+### Firewall hunting workflow
+
+1. Set the hypothesis, scope, time window, and time zone.
+2. Collect firewall events; use centralized SIEM search and network flow, IDS/IPS, or endpoint data where available.
+3. Filter for outbound traffic from internal source IPs to external destinations.
+4. Compare connection counts, destination diversity, ports, timing, and volume against the baseline.
+5. Review firewall action and policy, and identify unusual destinations and ports.
+6. Pivot on the source host, destination IPs, timestamps, and relevant CTI indicators.
+7. Correlate with flow, DNS, process, authentication, IDS/IPS, and other security evidence as applicable.
+8. Test benign explanations, record supporting and conflicting evidence, and report the outcome with confidence and limitations.
+
+### Pattern interpretation
+
+| Observation | Possible lead, not proof |
+| --- | --- |
+| One host to many external IPs on the same port | Scanning, discovery, or legitimate automated services |
+| One host to one external IP on many ports | Possible port scan or troubleshooting |
+| Regularly spaced outbound attempts | Possible C2 beaconing or scheduled application activity |
+| Unusually large outbound transfers | Possible exfiltration or legitimate backup |
+| Numerous denied connections | Blocked attempts, misconfiguration, or unwanted software |
+| Unexpected outbound RDP (TCP/3389) | Remote access worth validating against policy |
+
+**Evidence safeguards:** An `allow` decision means the firewall permitted traffic, not necessarily that the session completed. A `deny` or `drop` indicates enforcement at the observed control, not proof of compromise. Firewall connection attempts are not the same as failed authentication attempts; consult service/authentication logs for login outcomes. Field names differ by firewall vendor and parser. Check timestamp consistency, direction, NAT, sensor visibility, and raw events before concluding.
+
+**Related SIEM field lookup:** [SIEM Field Quick Reference: Traffic Direction](#siem-field-quick-reference-traffic-direction). This threat hunting workflow and the SIEM field cheat sheet are intentionally separate.
+
+[Back to top](#threat-hunting-field-guide)
 
 ## SIEM Field Quick Reference: Traffic Direction
 
