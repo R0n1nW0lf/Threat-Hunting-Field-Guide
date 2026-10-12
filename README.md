@@ -32,6 +32,7 @@ Use these links to jump directly to the section you need during a hunt.
 | Wireshark, Snort, Zeek, or Vectra | [Network Monitoring Tools](#network-monitoring-tools) |
 | PRTG, Nagios, or monitoring context | [Network and System Monitoring Context](#network-and-system-monitoring-context) |
 | Firewall threat hunting: baselines and outbound hypothesis | [Threat Hunting with Firewalls: Outbound Connection Hypothesis](#threat-hunting-with-firewalls-outbound-connection-hypothesis) |
+| Source country vs IP geolocation fields | [Country Field Comparison](#country-field-comparison) |
 | SIEM source/destination field cheat sheet | [SIEM Field Quick Reference: Traffic Direction](#siem-field-quick-reference-traffic-direction) |
 | Wazuh/OpenSearch fields and filters | [Wazuh / OpenSearch Threat Hunting Filter Field Guide](#wazuh--opensearch-threat-hunting-filter-field-guide) |
 | A complete example hunt | [Worked Hunt from Hypothesis to Action](#worked-hunt-from-hypothesis-to-action) |
@@ -599,6 +600,17 @@ Keep this table on a dedicated notes screen during investigations. These example
 | `data.action` | Logged security-device action | Was the traffic allowed, denied, or dropped? |
 | `data.win.eventdata.queryName` | Domain requested in a Sysmon DNS query event | Which domain was queried? |
 | `data.win.eventdata.image` | Executable path in relevant Sysmon events | Which process was involved? |
+
+### Country Field Comparison
+
+| Field | Where the value comes from | How to use it |
+| --- | --- | --- |
+| `GeoLocation.country_name` | IP geolocation enrichment (verify which IP the enrichment applies to) | Filter or examine geographic context when the enrichment refers to the source IP. |
+| `data.srccountry` | Source-country value parsed from the firewall event | Filter by the country the firewall log attributes to the source IP. |
+
+**Same purpose, different provenance:** Both may indicate the country associated with incoming traffic, but they are not interchangeable in every dataset. A generic geolocation field may refer to a different IP, and geolocation databases or firewall mappings can disagree. Verify the field's actual value and meaning in an expanded event; check `data.srcip`, raw `full_log`, and the log source. Country attribution is not proof of an attacker's physical location or malicious intent.
+
+**LetsDefend example:** For the Cambodia firewall exercise, `data.srccountry: Cambodia` was the verified source-country filter. The displayed geolocation country was also useful context. Use the exact capitalization and field names present in your environment.
 
 **Direction example:** `192.168.1.10 → 123.123.123.123` means `data.srcip: 192.168.1.10` and `data.dstip: 123.123.123.123` in a network event with those fields.
 
