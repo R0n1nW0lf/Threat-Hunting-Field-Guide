@@ -1,6 +1,6 @@
 # Threat Hunting Field Guide
 
-A practical standalone handbook for Ronald, developed from the SOC Analyst project study topics and recovered LetsDefend discussion.
+A practical reference for SOC analysts investigating endpoint, network, authentication, email, and DNS activity. Use it to choose evidence, build searches, test explanations, and document defensible findings.
 
 **The tool provides evidence. The analyst decides what the evidence means.**
 
@@ -10,12 +10,7 @@ A practical standalone handbook for Ronald, developed from the SOC Analyst proje
 
 Choose a hunting question, identify the evidence that can answer it, test competing explanations, and record a defensible conclusion. Tool entries emphasize what question the tool answers and what to inspect next.
 
-- **Lesson recap**: material recovered from the LetsDefend discussion.
-- **Study recap**: requested study topics and terminology; earlier lesson text was not available in full.
-- **Reference notes**: tool behavior supported by official documentation.
-- **Practical analyst notes**: added workflows, examples, and exercises rather than lesson quotations.
-
-**Source limitation:** the exact five official LetsDefend Threat Hunting Life Cycle stage names remain unverified. The lifecycle section flags this explicitly and keeps the two requested practical workflows separate from official lesson terminology.
+Filters are starting points. Confirm the search language, field mapping, logging coverage, and time range in the environment being investigated. Record both supporting and conflicting evidence.
 
 ## Quick Find
 
@@ -36,19 +31,14 @@ Use these links to jump directly to the section you need during a hunt.
 | SIEM source/destination field cheat sheet | [SIEM Field Quick Reference: Traffic Direction](#siem-field-quick-reference-traffic-direction) |
 | Wazuh/OpenSearch fields and filters | [Wazuh / OpenSearch Threat Hunting Filter Field Guide](#wazuh--opensearch-threat-hunting-filter-field-guide) |
 | A complete example hunt | [Worked Hunt from Hypothesis to Action](#worked-hunt-from-hypothesis-to-action) |
-| Hands-on practice plans | [Ronald Hands On Revisit Plans](#ronald-hands-on-revisit-plans) |
+| Endpoint process, hash, DNS, and firewall correlation | [EDR and CTI Correlation: Process to Firewall](#edr-and-cti-correlation-process-to-firewall) |
 | Email security: phishing, BEC, and investigation | [Threat Hunting with Email Security](#threat-hunting-with-email-security) |
 | DNS security: attacks, detection, and investigation | [Threat Hunting with DNS](#threat-hunting-with-dns) |
 | Hunt notes/report template | [Editable Hunt Worksheet](#editable-hunt-worksheet) |
 
 [Back to top](#threat-hunting-field-guide)
 
-
-[Back to top](#threat-hunting-field-guide)
-
 ## Threat Hunting Introduction
-
-**Study recap**
 
 Threat Hunting is a proactive search for adversary activity that may have escaped existing detections. It starts with a reasoned question about the environment and uses available evidence to investigate it. A hunt may discover an incident, a benign explanation, or a gap in visibility.
 
@@ -57,13 +47,11 @@ Threat Hunting is a proactive search for adversary activity that may have escape
 | Reactive security | An alert, reported incident, or known problem | What happened, how serious is it, and what response is needed? |
 | Proactive security | A hypothesis, TTP, intelligence lead, or unexplained behavior | Could this activity be occurring even though our current detections have not alerted? |
 
-**Practical analyst notes**
-
 Reactive investigation can produce a proactive hunt: after one confirmed incident, search the wider environment for the same behavior. Proactive does not mean guessing without evidence, and a quiet alert queue does not establish that the environment is safe.
 
 ### Threat Hunting Team and Competencies
 
-The following is a practical division of responsibilities, not a recovered list of LetsDefend job titles. In a small team, one person may perform several roles.
+Assign responsibilities before the hunt begins. In a small team, one person may perform several roles.
 
 | Role | Contribution to the hunt |
 | --- | --- |
@@ -79,11 +67,9 @@ Build competencies in network protocols; Windows and endpoint activity; log sear
 
 ## Threat Hunting Methodologies
 
-**Study recap with practical analyst notes**
-
 ### Adversary-Centric Approach
 
-Adversary-Centric hunting focuses on the adversary's Tactics, Techniques, and Procedures (TTPs). Use MITRE ATT&CK to organize observed behavior and identify what evidence your environment should contain. A tactic describes an objective, a technique describes a way to achieve it, and a procedure is a specific implementation. [3]
+Adversary-Centric hunting focuses on the adversary's Tactics, Techniques, and Procedures (TTPs). Use MITRE ATT&CK to organize observed behavior and identify what evidence your environment should contain. A tactic describes an objective, a technique describes a way to achieve it, and a procedure is a specific implementation.
 
 Ask: “If an attacker used this technique against our assets, what observable activity would it leave?” Choose behavior relevant to your systems, then identify the logs required to test it. An ATT&CK mapping organizes evidence; it does not by itself prove compromise or actor attribution.
 
@@ -105,17 +91,13 @@ Ask: “Did this indicator appear here, and what happened around the match?” V
 | Hypothesis-Driven | Can the available data test this proposition? | Test supporting and competing explanations. |
 | IoC-Based | Where and when did this indicator appear? | Validate the match and expand into behavior. |
 
-Practical analyst note: these methods can work together. An IoC hit can seed a hypothesis, and a TTP hunt can reveal new indicators. Keep the starting rationale and later pivots in the record.
+these methods can work together. An IoC hit can seed a hypothesis, and a TTP hunt can reveal new indicators. Keep the starting rationale and later pivots in the record.
 
 [Back to top](#threat-hunting-field-guide)
 
 ## Threat Hunting Life Cycle
 
-**Lesson terminology verification required**
-
-LetsDefend lists Threat Hunting Life Cycle in its Introduction to Threat Hunting course. The exact five official stage names and their descriptions were not present in the recovered conversation or accessible public course outline. They remain unverified in this edition. [1]
-
-For lesson study or quiz answers, use the exact names shown in Ronald's lesson. The five steps below are the requested practical workflow, not a substitute presented as LetsDefend's official terminology. Once the lesson wording is available, add it alongside this workflow and verify the correspondence.
+Use a repeatable workflow to keep scope, evidence, decisions, and follow-up actions traceable. Revisit earlier steps when a new finding changes the question or reveals a visibility gap.
 
 ### Practical workflow for managing a hunt
 
@@ -135,7 +117,7 @@ For lesson study or quiz answers, use the exact names shown in Ronald's lesson. 
 
 Hypothesis defines a testable claim. Collect Data establishes the relevant evidence and coverage. Analyze organizes events and finds patterns. Test checks the pattern against benign explanations and independent sources. Conclusion states what is supported, unsupported, or inconclusive. Action assigns response or improvement work.
 
-The reasoning workflow fits inside the broader hunt workflow. Hypothesis helps Plan; Collect Data supports Collect; Analyze and Test occur during Hunt; Conclusion belongs in Report; Action can begin response immediately and feed Improve. This is a practical mapping, not an official LetsDefend stage mapping.
+The reasoning workflow fits inside the broader hunt workflow. Hypothesis helps Plan; Collect Data supports Collect; Analyze and Test occur during Hunt; Conclusion belongs in Report; Action can begin response immediately and feed Improve.
 
 **Practical analyst note**
 
@@ -145,22 +127,18 @@ Escalate credible evidence of active compromise promptly. Do not wait for the re
 
 ## Threat Hunting Tools and Data Collection
 
-**Study recap**
-
-Keep the LetsDefend category names: Data Collection Tools; Data Analysis Tools; Network Monitoring Tools; Endpoint Detection and Response (EDR) Tools; Cyber Threat Intelligence (CTI) Tools; and Integration and Automation of Threat Hunting Tools. The public Tools course lists these headings. This edition develops the collection, analysis, and network tools requested so far. [2]
-
-**Practical analyst notes**
+Select tools by the evidence needed: endpoint activity, network observations, authentication records, intelligence context, or centralized search. Check how each source is collected and which parts of the environment it covers.
 
 EDR contributes endpoint context and investigation or response capabilities. CTI supplies leads and context. Integration and automation connect sources, enrichment, searches, and repeatable tasks. Use these categories to choose evidence, not to assume each product has only one function.
 
 | Tool | What question does it answer? | Evidence and next check |
 | --- | --- | --- |
-| Sysmon | What detailed activity occurred on this Windows host? | Process creation, network connections, and other configured events. Check command line, parent process, user, and timing. [4] |
-| Winlogbeat | How can Windows event logs reach our analysis platform? | Reads selected event logs and ships events to configured outputs. Verify the channels, filters, delivery, and parsed fields. [5] |
-| NXLog | How can we collect and forward logs from our sources? | Collection and forwarding agent with configured inputs and outputs. Check source selection, parsing, buffering, and delivery. [6] |
-| Graylog | Where can we centrally collect, organize, and search logs? | Central log management, parsing, and analysis. Confirm the expected sources arrive and remain searchable. [7] |
+| Sysmon | What detailed activity occurred on this Windows host? | Process creation, network connections, and other configured events. Check command line, parent process, user, and timing. |
+| Winlogbeat | How can Windows event logs reach our analysis platform? | Reads selected event logs and ships events to configured outputs. Verify the channels, filters, delivery, and parsed fields. |
+| NXLog | How can we collect and forward logs from our sources? | Collection and forwarding agent with configured inputs and outputs. Check source selection, parsing, buffering, and delivery. |
+| Graylog | Where can we centrally collect, organize, and search logs? | Central log management, parsing, and analysis. Confirm the expected sources arrive and remain searchable. |
 
-Practical distinction: Sysmon generates telemetry. Winlogbeat and NXLog move selected logs. Graylog centralizes and makes them useful. Graylog also performs analysis, even though it is retained here under the requested Data Collection Tools heading.
+Practical distinction: Sysmon generates telemetry. Winlogbeat and NXLog move selected logs. Graylog centralizes and makes them useful. Graylog also supports analysis; tool capabilities can overlap.
 
 ### A collection pipeline you can verify
 
@@ -176,19 +154,17 @@ Example: Windows activity → Sysmon events → Winlogbeat or NXLog → an analy
 
 ## Data Analysis Tools
 
-**Reference notes with practical analyst guidance**
-
 Analysis platforms help connect observations across time, hosts, users, and data sources. Their usefulness depends on what was collected and how it was parsed. A dashboard cannot establish the truth of a hypothesis without reviewing the underlying events.
 
 ### Splunk
 
-Question: “What related events can I find across the collected data?” Use searches, statistics, timelines, and dashboards to identify patterns and pivot from an entity into related activity. For a suspicious destination, find contacting hosts, then correlate process and authentication events. [8]
+Question: “What related events can I find across the collected data?” Use searches, statistics, timelines, and dashboards to identify patterns and pivot from an entity into related activity. For a suspicious destination, find contacting hosts, then correlate process and authentication events.
 
-Practical analyst note: confirm the index, source type, time zone, field extraction, and host coverage. Save the search and time boundaries. An empty search can result from an incorrect field or missing source, not just absent activity.
+confirm the index, source type, time zone, field extraction, and host coverage. Save the search and time boundaries. An empty search can result from an incorrect field or missing source, not just absent activity.
 
 ### ELK Stack components
 
-ELK preserves the lesson abbreviation: Elasticsearch, Logstash, and Kibana. Beats, including Winlogbeat, are collection agents in the broader Elastic Stack. [5, 9]
+ELK stands for Elasticsearch, Logstash, and Kibana. Beats, including Winlogbeat, are collection agents in the broader Elastic Stack.
 
 | Component | What question does it answer? | Analyst use |
 | --- | --- | --- |
@@ -199,9 +175,9 @@ ELK preserves the lesson abbreviation: Elasticsearch, Logstash, and Kibana. Beat
 
 ### LogRhythm
 
-Question: “Which collected events form a suspicious sequence or relationship?” Use SIEM search and correlation to relate activity across sources and investigate alarms in context. For example, connect unusual authentication with subsequent host or network activity. [10]
+Question: “Which collected events form a suspicious sequence or relationship?” Use SIEM search and correlation to relate activity across sources and investigate alarms in context. For example, connect unusual authentication with subsequent host or network activity.
 
-Practical analyst note: inspect the raw events behind a correlated finding. Normalization, rule configuration, and available sources affect the result. A priority score or alarm is an investigative lead, not a final verdict.
+inspect the raw events behind a correlated finding. Normalization, rule configuration, and available sources affect the result. A priority score or alarm is an investigative lead, not a final verdict.
 
 ### Make analysis repeatable
 
@@ -211,36 +187,28 @@ Start broad enough to understand the population, then narrow by entity and time.
 
 ## Network Monitoring Tools
 
-**Study recap and reference notes**
-
 | Tool | Core distinction | What question does it answer? |
 | --- | --- | --- |
-| Wireshark | Dissect actual packets | What exactly is in this captured exchange? [11] |
-| Snort | Detect using rules/signatures | Does this traffic match a detection rule/signature? [12] |
-| Zeek | Record/describe network activity through detailed logs/events | What network activity occurred, and how do the connections relate? [13] |
-| Vectra NDR | Surface anomalous network behavior using AI/ML | Which network behavior looks abnormal or suspicious enough to investigate? [14] |
+| Wireshark | Dissect actual packets | What exactly is in this captured exchange? |
+| Snort | Detect using rules/signatures | Does this traffic match a detection rule/signature? |
+| Zeek | Record/describe network activity through detailed logs/events | What network activity occurred, and how do the connections relate? |
+| Vectra NDR | Surface anomalous network behavior using AI/ML | Which network behavior looks abnormal or suspicious enough to investigate? |
 
 ### Wireshark
 
-Practical analyst note: narrow a packet capture by host, destination, protocol, and time. Examine protocol fields, requests and responses, retransmissions, or stream contents where visible. Capture location and encryption limit what you can see. A packet capture describes traffic at its observation point; it does not automatically identify the responsible process.
+narrow a packet capture by host, destination, protocol, and time. Examine protocol fields, requests and responses, retransmissions, or stream contents where visible. Capture location and encryption limit what you can see. A packet capture describes traffic at its observation point; it does not automatically identify the responsible process.
 
 ### Snort
 
-Practical analyst note: inspect the rule identifier, rule logic, direction, source and destination, and matching traffic. Correlate the alert with packet, host, and asset context. Snort can operate as IDS or IPS; blocking depends on deployment and configuration. No alert does not prove absence of malicious traffic. [12]
-
-**Ronald's hands-on revisit priority: Snort**
+inspect the rule identifier, rule logic, direction, source and destination, and matching traffic. Correlate the alert with packet, host, and asset context. Snort can operate as IDS or IPS; blocking depends on deployment and configuration. No alert does not prove absence of malicious traffic.
 
 ### Zeek
 
-Practical analyst note: begin with conn.log for connection metadata; pivot to dns.log or http.log when available. Correlate by time, endpoints, and connection UID where applicable. Look for frequency, volume, unusual peers, and protocol behavior. Zeek logs summarize observations; they are not a replacement for full packet contents. [13]
-
-**Ronald's hands-on revisit priority: Zeek**
+begin with conn.log for connection metadata; pivot to dns.log or http.log when available. Correlate by time, endpoints, and connection UID where applicable. Look for frequency, volume, unusual peers, and protocol behavior. Zeek logs summarize observations; they are not a replacement for full packet contents.
 
 ### Vectra NDR
 
-Lesson recap: Network Detection and Response monitors network traffic and uses AI and machine learning to surface abnormal behavior. Practical analyst note: investigate the behavior explanation, affected entity, timing, and related activity; compare with approved operations. An AI/ML finding still needs corroboration and a defensible analyst conclusion. [14]
-
-**Ronald's hands-on revisit priority: Vectra NDR**
+Network Detection and Response findings highlight behavior for investigation: investigate the behavior explanation, affected entity, timing, and related activity; compare with approved operations. An AI/ML finding still needs corroboration and a defensible analyst conclusion.
 
 [Back to top](#threat-hunting-field-guide)
 
@@ -248,25 +216,17 @@ Lesson recap: Network Detection and Response monitors network traffic and uses A
 
 ### PRTG Network Monitor
 
-**Lesson recap from the recovered discussion**
+Use monitoring sensors to locate changes in traffic, availability, or application performance. Verify the sensor type and collection interval before interpreting an alert.
 
-The recorded feature names are Comprehensive Monitoring, Sensors, Real-time Alerts, User-Friendly Interface, and Mobile Access. The discussion describes monitoring network devices, traffic, and applications with customizable sensors and alerts for network problems.
-
-**Practical analyst notes**
-
-Question: “Something unusual is happening on the network. Where should I investigate?” Review the affected sensor, time, baseline, and device. A bandwidth change or availability problem can provide a useful starting point. Then collect security evidence that can explain it. [15]
+Question: “Something unusual is happening on the network. Where should I investigate?” Review the affected sensor, time, baseline, and device. A bandwidth change or availability problem can provide a useful starting point. Then collect security evidence that can explain it.
 
 A spike may reflect backups, updates, congestion, or unauthorized transfer. PRTG can point to a condition worth investigating; individual packet dissection is the Wireshark question.
 
 ### Nagios
 
-**Lesson recap from the recovered discussion**
+Nagios checks can expose service failures or resource changes that merit investigation. Confirm the configured plugin and threshold. Distinguish Nagios Core from other products when evaluating capabilities and licensing.
 
-The discussion identifies network/device and service monitoring, threshold alerts, customization, plugins/integrations, and open source. Keep the product distinction in mind: Nagios Core is the open-source monitoring project; other Nagios products have their own capabilities and licensing. [16]
-
-**Practical analyst notes**
-
-Question: “Something abnormal happened to a system or service. Does it have security significance?” Review the check result, state changes, duration, affected hosts, and maintenance context. Pivot to security logs when an outage or resource change has an unexplained cause. Plugins determine what a configured check can observe. [16]
+Question: “Something abnormal happened to a system or service. Does it have security significance?” Review the check result, state changes, duration, affected hosts, and maintenance context. Pivot to security logs when an outage or resource change has an unexplained cause. Plugins determine what a configured check can observe.
 
 ### Move from a condition to evidence
 
@@ -277,13 +237,13 @@ Question: “Something abnormal happened to a system or service. Does it have se
 | Snort rule match | Rule logic, packet detail, host context | Does the match represent the behavior we suspect? |
 | Vectra behavioral finding | Related activity and independent telemetry | Is the behavior authorized and consistent with the asset's role? |
 
-Practical analyst rule: anomalies establish a reason to investigate. They do not establish attacker intent. Align time zones and use the asset's actual role before connecting events into a narrative.
+Anomalies establish a reason to investigate. They do not establish attacker intent. Align time zones and use the asset's actual role before connecting events into a narrative.
 
 [Back to top](#threat-hunting-field-guide)
 
 ## Wazuh / OpenSearch Threat Hunting Filter Field Guide
 
-**Practical analyst notes from the DMZ hands-on hunt**
+These examples use field/value filters and query-string patterns. Select the matching search mode in Discover; DQL, Lucene query strings, and filter controls have different behavior. Confirm field types and ruleset-specific group values before combining conditions. See the [OpenSearch query-string reference](https://docs.opensearch.org/latest/query-dsl/full-text/query-string/).
 
 Use fields to translate a hunting question into evidence. Do not memorize filter combinations without understanding what each field represents.
 
@@ -316,7 +276,7 @@ Use fields to translate a hunting question into evidence. Do not memorize filter
 - `data.dstip` = where the activity was going.
 - `agent.ip` = which Wazuh-monitored endpoint reported the event.
 
-DMZ hunt example: `data.srcip: 172.16.8.190` showed that the compromised webserver became the source of later SSH activity. An `agent.ip` such as `10.10.10.22` identifies the monitored destination system reporting that SSH attempt. Filtering only on `agent.ip: 172.16.8.190` can therefore hide evidence generated by the destination hosts.
+Illustrative pivot: `data.srcip: 172.16.8.190` searches for activity attributed to that source address; inspect the records before deciding whether it represents lateral movement. An `agent.ip` such as `10.10.10.22` identifies the monitored destination system reporting that SSH attempt. Filtering only on `agent.ip: 172.16.8.190` can therefore hide evidence generated by the destination hosts.
 
 ### Build filters from the hunting question
 
@@ -333,7 +293,7 @@ Example: “Find failed SSH authentication originating from 172.16.8.190.”
 
 Practical rule: first understand what the question is asking, then identify which field represents each part of the question. Use the filtered results as evidence and verify the underlying event before reporting a conclusion.
 
-### Lessons reinforced from hands-on VPN, SSH, FTP, and Audit hunts
+### Correlating VPN, SSH, FTP, and Linux Audit evidence
 
 **Translate question wording into stacked filters.** Break the question into evidence concepts, then map each concept to a field or rule group. For example, a service can map to a service-specific `rule.groups` value, a successful login to `authentication_success`, and an account name to `data.dstuser`. Stack only filters justified by the question, then inspect the remaining event.
 
@@ -341,7 +301,7 @@ Practical rule: first understand what the question is asking, then identify whic
 
 **Do not confuse hit count with unique count or frequency.** A question asking for the “most frequent” value requires counting occurrences across the full result set. A question asking for “unique destinations” requires counting distinct destination values. Visible rows or total hits alone are not proof.
 
-**Use `full_log` as a fallback for unparsed evidence.** Wazuh may parse many useful fields while leaving another needed value only in the original log. If the expected field is missing, inspect `full_log` before concluding that the evidence is unavailable. Raw logs can also translate numeric identities into names, such as Linux UID 0 appearing as `root`.
+**Use `full_log` as a fallback for unparsed evidence.** Wazuh may parse many useful fields while leaving another needed value only in the original log. If the expected field is missing, inspect `full_log` before concluding that the evidence is unavailable. Raw logs may include numeric UIDs and account names. Verify the host account mapping rather than assuming an event supplied both.
 
 **Correlate by time, not just by IP or username.** The same address or account can appear in unrelated activity elsewhere in the hunting window. Anchor pivots to the relevant session or event time and follow activity forward or backward from that point.
 
@@ -351,7 +311,7 @@ Practical rule: first understand what the question is asking, then identify whic
 
 **Reconstruct Linux Audit commands from `execve` arguments.** `data.audit.command` may expose only the base command. Read `data.audit.execve.a0`, `a1`, `a2`, and later arguments in order to reconstruct the command line, identify command targets, or recover a full file path passed to an editor. For example, the arguments can distinguish running `ps` from searching its output for a particular process.
 
-**Follow configuration changes into service activity.** When a question asks what happened before a service restart, use the restart as a timeline anchor and inspect preceding Audit activity on the same endpoint. An editor command plus a configuration-file argument can establish which service-related file was changed and which user performed the action.
+**Follow configuration changes into service activity.** When a question asks what happened before a service restart, use the restart as a timeline anchor and inspect preceding Audit activity on the same endpoint. An editor command with a configuration-file argument identifies an attempted interaction with that path. Confirm an actual change through file integrity, audit write records, or a configuration comparison, and correlate the account and session.
 
 **Expand the correct event for enrichment.** Once the event is isolated, expanded fields can provide information not shown in the normal result row, such as IP geolocation. Treat enrichment as context associated with the event and keep the underlying source IP visible.
 
@@ -359,7 +319,7 @@ Practical rule: first understand what the question is asking, then identify whic
 
 ### Discover an unknown Windows Event ID from the evidence
 
-When a hunting question points to a host or behavior but you do **not** know the Event ID, do not guess the number and do not depend on a hint. Pivot from evidence you already proved.
+When a hunting question points to a host or behavior but you do **not** know the Event ID, identify the provider, channel, and event content before choosing a numeric filter. Pivot from evidence you already proved.
 
 **Method: known condition → agent/host → all host telemetry → enumerate Event IDs → inspect behavior → identify the matching Event ID**
 
@@ -372,11 +332,7 @@ When a hunting question points to a host or behavior but you do **not** know the
 7. Match the event behavior to the hunting question. If the question asks what application was installed, look for an event whose data actually identifies an installation/application.
 8. Once the matching event is found, record its Event ID and use that ID as a repeatable filter for similar telemetry.
 
-Example reasoning from the hands-on hunt:
-
-**High CPU condition → identify affected agent → pivot to all events for that agent → inspect available Event IDs → find the event containing the miner application → observe Event ID 1033**
-
-The important lesson is not to memorize `1033` first. The reusable skill is discovering an unknown Event ID by narrowing to the correct agent and inspecting what each candidate event actually represents.
+Record the provider and channel along with the Event ID: numbers are not globally unique across Windows event providers. Confirm that the event describes the behavior being investigated rather than selecting an ID from memory.
 
 Practical warning: a monitoring event may not contain the Windows Event ID at all. The monitoring alert is the starting condition; the endpoint telemetry is the next evidence source.
 
@@ -384,23 +340,9 @@ Practical warning: a monitoring event may not contain the Windows Event ID at al
 
 When a known hash IOC is visibly present in telemetry but exact SIEM searches return zero results, test whether the hash is embedded inside a larger searchable value.
 
-In the hands-on hunt, these approaches did **not** return the expected event:
+If a bare hash or exact field match misses a known record, inspect the indexed representation and active search mode. A query-string pattern such as `*MD5=<hash>*` may help locate a hash embedded in a combined value; replace `<hash>` with a validated hexadecimal digest. This is a search pattern, not a known malicious indicator.
 
-- Bare MD5 value
-- `MD5=<hash>` without wildcards
-- Exact filtering on `data.win.eventdata.hashes`
-
-The working search was:
-
-`*MD5=<hash>*`
-
-Example pattern:
-
-`*MD5=514CF8AS644F22924DA63989F3B56CD9*`
-
-This returned the matching Sysmon process telemetry and exposed the additional affected endpoint and miner process.
-
-**Why this matters:** Sysmon hash telemetry can be stored as a larger combined value containing multiple hash types, such as `SHA1=...,MD5=...,SHA256=...,IMPHASH=...`. An exact lookup for only the MD5 may therefore fail. Leading and trailing `*` wildcards perform a contains-style search for the embedded `MD5=<hash>` sequence.
+**Why this matters:** Sysmon hash telemetry can be stored as a larger combined value containing multiple hash types, such as `SHA1=...,MD5=...,SHA256=...,IMPHASH=...`. An exact lookup for only the MD5 may therefore fail. In a compatible query-string search, leading and trailing `*` wildcards can match surrounding characters. Analyzer settings, default search fields, and leading-wildcard restrictions affect results; narrow by host and time and verify the raw hash value.
 
 Reusable hunting workflow:
 
@@ -416,9 +358,7 @@ Do not treat an exact-search miss as proof that an IOC is absent when the teleme
 
 ## Worked Hunt from Hypothesis to Action
 
-**Practical analyst example only**
-
-Scenario: a workstation appears to contact an external destination repeatedly. The activity might be unauthorized command and control, but software updates or a scheduled health check could produce a similar pattern. No actual Ronald case or lab result is asserted here.
+Scenario: a workstation appears to contact an external destination repeatedly. The activity might be unauthorized command and control, but software updates or a scheduled health check could produce a similar pattern. This is an illustrative scenario; conclusions depend on the observed evidence.
 
 ### Hypothesis and plan
 
@@ -450,52 +390,7 @@ Assign an owner to response, logging fixes, or detection tuning. Preserve the ev
 
 [Back to top](#threat-hunting-field-guide)
 
-## Ronald Hands On Revisit Plans
-
-**Practical analyst exercises**
-
-Snort, Zeek, and Vectra NDR are Ronald's explicit hands-on revisit priorities. Use a permitted lab or supplied training data. Each exercise should end with an evidence record and a conclusion; these plans do not claim that the exercises have already been completed.
-
-### Snort revisit
-
-Goal: explain why a rule/signature produced an alert. Use a benign lab capture and a simple training rule, or a supplied alert with its matching capture. Record the Snort version, configuration, and rules used.
-
-- Identify the rule ID, matching conditions, traffic direction, and packet or stream evidence.
-
-- Compare one matching exchange with one nonmatching exchange. Explain the difference.
-
-- Use Wireshark to inspect the relevant traffic and write a verdict with a benign alternative.
-
-Completion evidence: the alert, rule explanation, packet reference, and a short conclusion. Ask: “What did this rule establish, and what still needs investigation?”
-
-### Zeek revisit
-
-Goal: reconstruct network activity from detailed logs/events. Process the same permitted capture where practical, so the packet view and log view describe the same traffic.
-
-- Summarize conn.log by source, destination, protocol/service, duration, and byte counts.
-
-- Pivot to available DNS or HTTP records using connection identifiers and timestamps.
-
-- Compare the resulting timeline with Wireshark. Document what the logs preserve and omit.
-
-Completion evidence: a connection timeline, related records, and one explained anomaly or unusual pattern. Ask: “What happened, and which further evidence would help explain it?”
-
-### Vectra NDR revisit
-
-Goal: validate a behavioral detection. Use an authorized training tenant or supplied detection walkthrough. If access is unavailable, record this as a pending hands-on exercise; a documentation review is preparation, not hands-on completion.
-
-- Identify the affected entity, behavior explanation, detection time, and related activity.
-
-- Check approved operations and correlate with independent host or network evidence.
-
-- Record whether evidence supports compromise, supports a benign cause, or is inconclusive.
-
-Completion evidence: detection details, corroboration, limitations, and the analyst decision. Ask: “Why is this behavior suspicious in this environment?”
-
-[Back to top](#threat-hunting-field-guide)
-
-
-## Hands-on EDR and CTI Hunting: Process to Firewall
+## EDR and CTI Correlation: Process to Firewall
 
 Use these Wazuh/OpenSearch filters to reconstruct an endpoint incident from observed telemetry. Rule-group names depend on the installed ruleset; verify the event content rather than assuming a filter proves the behavior.
 
@@ -520,14 +415,14 @@ Use these Wazuh/OpenSearch filters to reconstruct an endpoint incident from obse
 **Process create → hash match → parent process → Sysmon Event 3 destination → firewall destination filter → firewall action.**
 
 - Sysmon Event 3 records network connection telemetry, but does not alone establish that the firewall permitted the traffic.
-- Filtering firewall events by destination IP alone can return connections from *different* internal source hosts. In the practical exercise, the endpoint Sysmon event and one visible firewall event had different source IPs; the firewall search returned two hits. Inspect **all relevant hits** and compare source IP, destination IP, time, port, and protocol before attributing an allow/deny decision to a specific process or endpoint.
+- Filtering firewall events by destination IP alone can return connections from *different* internal source hosts. Inspect **all relevant hits** and compare source IP, destination IP, time, port, and protocol before attributing an allow/deny decision to a specific process or endpoint.
 - Hit count is not unique-host count. Do not conclude a particular connection was blocked solely because a firewall event to the same destination says `deny`.
 
 [Back to top](#threat-hunting-field-guide)
 
 ## Step-by-Step Evidence Tracking: Evidence First
 
-Use this method for unfamiliar threat-hunting questions. The goal is to **find and validate evidence independently**, not reverse-engineer an answer from a hint.
+Use this method for unfamiliar threat-hunting questions. Build an investigation record that another analyst can reproduce from the same evidence.
 
 1. **Translate the question into an evidence target.** Write down the behavior being investigated, the time window, any known host or IOC, and the exact output requested (IP, command, URL, group, executable, technique ID, or action). Separate confirmed facts from assumptions.
 2. **Set the correct time range.** Check timezone and ensure the start and end cover the requested activity. A wrong time window can make good filters appear broken.
@@ -538,13 +433,13 @@ Use this method for unfamiliar threat-hunting questions. The goal is to **find a
 7. **Discover and verify MITRE mappings.** First observe what the event actually describes. Read `rule.mitre.id` and `rule.mitre.technique` when available. If absent, research the behavior in MITRE ATT&CK as a **hypothesis**, then check whether the event supports it. Detection mappings can differ and may be missing.
 8. **Correlate without conflating.** Compare host, account, PID, process lineage, timestamps, source/destination addresses, and actions across events. `agent.ip` is the reporting endpoint, not automatically the network source; a process execution or connection attempt alone does not prove success.
 9. **Return to the exact requested field.** Distinguish `commandLine` (full invocation), `image` (executable path), and `originalFileName` (embedded original filename). Copy the recorded value exactly, including unexpected spellings, and verify it in the raw event.
-10. **Report evidence, uncertainty, and lesson.** Record the answer with its supporting timestamp, host, field, and event. State what is observed versus inferred; do not claim intent, success, or attribution without corroboration. Save reusable search techniques rather than copying lab-specific answers.
+10. **Report findings and uncertainty.** Record the finding with its supporting timestamp, host, field, and event. State what is observed versus inferred; do not claim intent, success, or attribution without corroboration. Preserve the exact searches, time boundaries, evidence references, and follow-up actions.
 
-**Investigation flow:** Question → Known facts → Broad search → Event inspection → Progressive filters → Correlation → MITRE verification → Exact-field confirmation → Report.
+[Back to top](#threat-hunting-field-guide)
 
 ## Threat Hunting with Firewalls: Outbound Connection Hypothesis
 
-**Lesson recap — LetsDefend Threat Hunting with Firewalls (Lessons 1–4).** Firewall logs provide source/destination, ports, protocols, timestamps, traffic volume, policy decisions, and patterns. Hunting begins by comparing observations with a baseline rather than assuming unusual traffic is malicious.
+Firewall logs provide source/destination, ports, protocols, timestamps, traffic volume, policy decisions, and patterns. Hunting begins by comparing observations with a baseline rather than assuming unusual traffic is malicious.
 
 ### Hypothesis
 
@@ -584,7 +479,7 @@ A specific internal IP address may suddenly generate a high number of outbound c
 
 **Evidence safeguards:** An `allow` decision means the firewall permitted traffic, not necessarily that the session completed. A `deny` or `drop` indicates enforcement at the observed control, not proof of compromise. Firewall connection attempts are not the same as failed authentication attempts; consult service/authentication logs for login outcomes. Field names differ by firewall vendor and parser. Check timestamp consistency, direction, NAT, sensor visibility, and raw events before concluding.
 
-**Related SIEM field lookup:** [SIEM Field Quick Reference: Traffic Direction](#siem-field-quick-reference-traffic-direction). This threat hunting workflow and the SIEM field cheat sheet are intentionally separate.
+**Related field lookup:** [SIEM Field Quick Reference: Traffic Direction](#siem-field-quick-reference-traffic-direction).
 
 [Back to top](#threat-hunting-field-guide)
 
@@ -612,9 +507,9 @@ Keep this table on a dedicated notes screen during investigations. These example
 
 **Same purpose, different provenance:** Both may indicate the country associated with incoming traffic, but they are not interchangeable in every dataset. A generic geolocation field may refer to a different IP, and geolocation databases or firewall mappings can disagree. Verify the field's actual value and meaning in an expanded event; check `data.srcip`, raw `full_log`, and the log source. Country attribution is not proof of an attacker's physical location or malicious intent.
 
-**LetsDefend example:** For the Cambodia firewall exercise, `data.srccountry: Cambodia` was the verified source-country filter. The displayed geolocation country was also useful context. Use the exact capitalization and field names present in your environment.
+**Filter pattern:** `data.srccountry: <country>` selects a source-country value when that field is present. Replace the placeholder with the recorded value and quote values containing spaces according to the active search language.
 
-**Direction example:** `192.168.1.10 → 123.123.123.123` means `data.srcip: 192.168.1.10` and `data.dstip: 123.123.123.123` in a network event with those fields.
+**Direction example:** `192.168.1.10 → 203.0.113.20` means `data.srcip: 192.168.1.10` and `data.dstip: 203.0.113.20` in a network event with those fields.
 
 - **Outbound to a suspicious IP:** start with `data.dstip`; verify the internal `data.srcip`, time, port, and action.
 - **Inbound from a suspicious IP:** start with `data.srcip`; verify the internal `data.dstip`, time, port, and action.
@@ -622,10 +517,7 @@ Keep this table on a dedicated notes screen during investigations. These example
 - **Evidence caution:** `allow` does not prove a completed session or compromise; `deny`/`dropped` describe the observed enforcement action. Correlate independent events before concluding success.
 - **Search caution:** Some event sources use different field names or omit destination fields. Inspect the expanded raw event and confirm the time window, log source, and direction.
 
-**Notebook reminder:** Known facts → Field to check → Search → Raw event → Correlation → Verified finding.
-
 [Back to top](#threat-hunting-field-guide)
-
 
 ## Threat Hunting with Email Security
 
@@ -669,40 +561,68 @@ Email investigations begin with a question: **Did this message reach anyone, and
 
 ## Threat Hunting with DNS
 
-**DNS attack techniques:** DNS tunneling, cache poisoning, amplification, typosquatting, hijacking, and rebinding. Hunting leads include unusually long or frequent queries, unexpected answers, lookalike domains, DNS configuration changes, and public-to-private answer changes.
+Start with two questions: **Which process requested this name, and what happened after the lookup?** Resolver logs explain DNS exchanges; endpoint telemetry helps connect them to a host and process. Establish the observation point before counting clients or attributing activity.
 
-**DNS security capabilities:** DNS security systems support anomaly detection, malicious-domain blocking, tunneling detection, real-time monitoring, machine learning, behavioral baselines, threat intelligence, and SIEM correlation.
+### What to examine
 
-**DNS investigation workflow:** Collect DNS query/response logs, centralize in SIEM, establish normal baselines, and compare real-time with retrospective analysis. Useful Sysmon fields: `data.win.system.eventID` (22), `data.win.eventdata.queryName`, `data.win.eventdata.queryResults`, `data.win.eventdata.image`, and `agent.ip`. Examine query frequency, domains, response codes, and endpoint/firewall context.
+| Question | Evidence to inspect |
+| --- | --- |
+| Who made the request? | Client address, resolver address, host identity, process image, and process GUID where available |
+| What was requested? | Full query name, record type, query time, and parent domain |
+| What answer was observed? | Response code, returned records, TTL, and answer time from resolver or packet data |
+| Is the pattern unusual for this asset? | Rate, unique names, label lengths, response sizes, failure ratio, and peer-host baseline |
+| Did communication follow? | Endpoint network events, proxy records, firewall sessions, and process creation |
+| Did resolution settings change? | Resolver configuration, hosts-file changes, administrative activity, and change approvals |
 
-**Evidence cautions:** DNS query is not proof of a click or successful connection; anomalous DNS activity alone is not proof of tunneling or exfiltration.
+### Investigation workflow
 
-**Investigation topic to expand:** DNS queries and potential data exfiltration.
+1. **Scope the observation.** Select hosts, resolvers, and time boundaries. Determine whether a logged source is an endpoint or a forwarding resolver; account for NAT and clock differences.
+2. **Validate collection.** Identify which sources contain queries, responses, or both. Caches and encrypted DNS can limit resolver visibility. Missing resolver records do not establish that no lookup occurred.
+3. **Inspect a representative event.** For Sysmon DNS telemetry, use `data.win.system.eventID: 22` together with the Sysmon provider/channel or equivalent source constraint. Review `data.win.eventdata.queryName`, `data.win.eventdata.queryResults`, `data.win.eventdata.image`, and `agent.ip`. Parsed names depend on the pipeline. Sysmon Event ID 22 can record successful, failed, and cached queries; it is not a complete DNS packet record. [Sysmon event reference](https://learn.microsoft.com/en-us/sysinternals/downloads/sysmon).
+4. **Compare with a baseline.** Group by client, process, domain, and time interval. Inspect full names as well as parent-domain totals. Separate repeated queries from distinct queried names; compare against the asset's role and similar hosts.
+5. **Test competing explanations.** Long labels, frequent TXT queries, or many failures warrant inspection, but CDNs, security products, service discovery, and misconfiguration can produce unusual patterns. Examine content, timing, process lineage, and domain ownership context.
+6. **Correlate subsequent activity.** Compare answers valid at the event time with Sysmon Event ID 3, proxy, and firewall records. Join on host, process GUID where available, time, destination, port, and protocol. Shared hosting and changing answers make an IP-only match weak evidence.
+7. **Report the supported finding.** State whether the evidence establishes a lookup, a connection, or suspected abuse. Preserve queries and raw events, document visibility gaps, and assign response or collection work.
+
+### Patterns and interpretation
+
+| Observation | Analyst interpretation and next check |
+| --- | --- |
+| Many changing subdomains with long or encoded-looking labels | Possible tunneling or automated application traffic; inspect label content, process, rate, and responses |
+| Frequent failures across generated-looking names | Possible domain generation or broken software; check response codes, process lineage, and peer activity |
+| Large responses disproportionate to requests | Possible amplification in the right network context; verify packet direction, spoofing evidence, and resolver exposure |
+| Unexpected answers or resolver changes | Possible poisoning, hijacking, or authorized change; compare trusted observations, configuration history, and administrative records |
+| A name changes from a public to a private address | Possible rebinding or legitimate split DNS; verify the answer sequence and subsequent application requests |
+| Lookalike domain | Possible impersonation; correlate email or browser activity and domain context |
+
+### Investigating possible DNS exfiltration
+
+Test whether query labels plausibly carry data, whether the pattern repeats under a consistent domain, and which process generates it. Preserve full names and responses. Compare throughput and timing with ordinary application traffic and look for preceding file access or staging. Entropy, label length, or a tunneling alert alone cannot establish that sensitive information left the host. Record what data, if any, can actually be demonstrated in the observed requests and who controlled the destination only when supported.
+
+**Rule of evidence:** A lookup does not establish a user click, successful connection, malware execution, or exfiltration. A security product's block records enforcement at that control; check the host and other resolution paths before claiming the activity was fully prevented.
 
 [Back to top](#threat-hunting-field-guide)
 
 ## Editable Hunt Worksheet
 
-**Practical analyst template**
-
 Copy this page for each hunt. Replace the prompts with actual evidence and decisions. Preserve uncertainty and the original time boundaries.
 
 ### Hunt definition
 
-Hunt ID and title: ______________________________________________  
-Analyst and owner: ______________________________________________  
-Date and time zone: ______________________________________________
+Hunt ID and title: ______________________________________________<br>
+Analyst and owner: ______________________________________________<br>
+Date and time zone: ______________________________________________<br>
 
-Hypothesis or starting IoC/TTP: ___________________________________  
-Reason for the hunt and intelligence source: ________________________  
-Systems and time window in scope: _________________________________  
-Out of scope and stop conditions: __________________________________
+Hypothesis or starting IoC/TTP: ___________________________________<br>
+Reason for the hunt and intelligence source: ________________________<br>
+Systems and time window in scope: _________________________________<br>
+Out of scope and stop conditions: __________________________________<br>
 
 ### Data and coverage
 
-Sources and collection settings: __________________________________  
-Retention and sensor/host coverage: _________________________________  
-Known gaps and timestamp checks: __________________________________
+Sources and collection settings: __________________________________<br>
+Retention and sensor/host coverage: _________________________________<br>
+Known gaps and timestamp checks: __________________________________<br>
 
 ### Investigation record
 
@@ -714,13 +634,13 @@ Known gaps and timestamp checks: __________________________________
 
 ### Conclusion and action
 
-Outcome: supported / benign explanation supported / unsupported within scope / inconclusive  
-Confidence and reason: ___________________________________________  
-Strongest supporting evidence: ____________________________________  
-Competing explanation and test: ___________________________________  
-Limitations: ____________________________________________________  
-Action, owner, and due date: _______________________________________  
-Detection or collection improvement: _______________________________
+Outcome: supported / benign explanation supported / unsupported within scope / inconclusive
+Confidence and reason: ___________________________________________<br>
+Strongest supporting evidence: ____________________________________<br>
+Competing explanation and test: ___________________________________<br>
+Limitations: ____________________________________________________<br>
+Action, owner, and due date: _______________________________________<br>
+Detection or collection improvement: _______________________________<br>
 
 ### Before closing the hunt
 
