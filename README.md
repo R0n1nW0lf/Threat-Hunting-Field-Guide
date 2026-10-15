@@ -91,7 +91,7 @@ Ask: “Did this indicator appear here, and what happened around the match?” V
 | Hypothesis-Driven | Can the available data test this proposition? | Test supporting and competing explanations. |
 | IoC-Based | Where and when did this indicator appear? | Validate the match and expand into behavior. |
 
-these methods can work together. An IoC hit can seed a hypothesis, and a TTP hunt can reveal new indicators. Keep the starting rationale and later pivots in the record.
+These methods can work together. An IoC hit can seed a hypothesis, and a TTP hunt can reveal new indicators. Keep the starting rationale and later pivots in the record.
 
 [Back to top](#threat-hunting-field-guide)
 
@@ -118,8 +118,6 @@ Use a repeatable workflow to keep scope, evidence, decisions, and follow-up acti
 Hypothesis defines a testable claim. Collect Data establishes the relevant evidence and coverage. Analyze organizes events and finds patterns. Test checks the pattern against benign explanations and independent sources. Conclusion states what is supported, unsupported, or inconclusive. Action assigns response or improvement work.
 
 The reasoning workflow fits inside the broader hunt workflow. Hypothesis helps Plan; Collect Data supports Collect; Analyze and Test occur during Hunt; Conclusion belongs in Report; Action can begin response immediately and feed Improve.
-
-**Practical analyst note**
 
 Escalate credible evidence of active compromise promptly. Do not wait for the report to be finished. If required data is absent, record an inconclusive result and a collection improvement rather than treating the hypothesis as disproved.
 
@@ -160,7 +158,7 @@ Analysis platforms help connect observations across time, hosts, users, and data
 
 Question: “What related events can I find across the collected data?” Use searches, statistics, timelines, and dashboards to identify patterns and pivot from an entity into related activity. For a suspicious destination, find contacting hosts, then correlate process and authentication events.
 
-confirm the index, source type, time zone, field extraction, and host coverage. Save the search and time boundaries. An empty search can result from an incorrect field or missing source, not just absent activity.
+Confirm the index, source type, time zone, field extraction, and host coverage. Save the search and time boundaries. An empty search can result from an incorrect field or missing source, not just absent activity.
 
 ### ELK Stack components
 
@@ -177,7 +175,7 @@ ELK stands for Elasticsearch, Logstash, and Kibana. Beats, including Winlogbeat,
 
 Question: “Which collected events form a suspicious sequence or relationship?” Use SIEM search and correlation to relate activity across sources and investigate alarms in context. For example, connect unusual authentication with subsequent host or network activity.
 
-inspect the raw events behind a correlated finding. Normalization, rule configuration, and available sources affect the result. A priority score or alarm is an investigative lead, not a final verdict.
+Inspect the raw events behind a correlated finding. Normalization, rule configuration, and available sources affect the result. A priority score or alarm is an investigative lead, not a final verdict.
 
 ### Make analysis repeatable
 
@@ -196,15 +194,15 @@ Start broad enough to understand the population, then narrow by entity and time.
 
 ### Wireshark
 
-narrow a packet capture by host, destination, protocol, and time. Examine protocol fields, requests and responses, retransmissions, or stream contents where visible. Capture location and encryption limit what you can see. A packet capture describes traffic at its observation point; it does not automatically identify the responsible process.
+Narrow a packet capture by host, destination, protocol, and time. Examine protocol fields, requests and responses, retransmissions, or stream contents where visible. Capture location and encryption limit what you can see. A packet capture describes traffic at its observation point; it does not automatically identify the responsible process.
 
 ### Snort
 
-inspect the rule identifier, rule logic, direction, source and destination, and matching traffic. Correlate the alert with packet, host, and asset context. Snort can operate as IDS or IPS; blocking depends on deployment and configuration. No alert does not prove absence of malicious traffic.
+Inspect the rule identifier, rule logic, direction, source and destination, and matching traffic. Correlate the alert with packet, host, and asset context. Snort can operate as IDS or IPS; blocking depends on deployment and configuration. No alert does not prove absence of malicious traffic.
 
 ### Zeek
 
-begin with conn.log for connection metadata; pivot to dns.log or http.log when available. Correlate by time, endpoints, and connection UID where applicable. Look for frequency, volume, unusual peers, and protocol behavior. Zeek logs summarize observations; they are not a replacement for full packet contents.
+Begin with conn.log for connection metadata; pivot to dns.log or http.log when available. Correlate by time, endpoints, and connection UID where applicable. Look for frequency, volume, unusual peers, and protocol behavior. Zeek logs summarize observations; they are not a replacement for full packet contents.
 
 ### Vectra NDR
 
@@ -634,7 +632,7 @@ Known gaps and timestamp checks: __________________________________<br>
 
 ### Conclusion and action
 
-Outcome: supported / benign explanation supported / unsupported within scope / inconclusive
+Outcome: supported / benign explanation supported / unsupported within scope / inconclusive<br>
 Confidence and reason: ___________________________________________<br>
 Strongest supporting evidence: ____________________________________<br>
 Competing explanation and test: ___________________________________<br>
