@@ -4,7 +4,7 @@ A practical reference for SOC analysts investigating endpoint, network, authenti
 
 **The tool provides evidence. The analyst decides what the evidence means.**
 
-**QUICK FIND:** [SIEM / Wazuh / OpenSearch Filter Cheat Sheet](#wazuh--opensearch-threat-hunting-filter-field-guide) · [All handbook sections](#quick-find)
+**QUICK FIND:** [SIEM / Wazuh / OpenSearch Filter Cheat Sheet](#siem--wazuh--opensearch-filter-cheat-sheet) · [All handbook sections](#quick-find)
 
 **START HERE:** [Step-by-Step Evidence Tracking: Evidence First](#step-by-step-evidence-tracking-evidence-first) — learn how to locate, narrow, correlate, and verify evidence.
 
@@ -31,7 +31,7 @@ Use these links to jump directly to the section you need during a hunt.
 | Firewall threat hunting: baselines and outbound hypothesis | [Threat Hunting with Firewalls: Outbound Connection Hypothesis](#threat-hunting-with-firewalls-outbound-connection-hypothesis) |
 | Source country vs IP geolocation fields | [Country Field Comparison](#country-field-comparison) |
 | SIEM source/destination field cheat sheet | [SIEM Field Quick Reference: Traffic Direction](#siem-field-quick-reference-traffic-direction) |
-| SIEM/Wazuh/OpenSearch filter cheat sheet: question → field → example → verification | [Wazuh / OpenSearch Threat Hunting Filter Field Guide](#wazuh--opensearch-threat-hunting-filter-field-guide) |
+| SIEM/Wazuh/OpenSearch filter cheat sheet: question → field → example → verification | [SIEM / Wazuh / OpenSearch Filter Cheat Sheet](#siem--wazuh--opensearch-filter-cheat-sheet) |
 | A complete example hunt | [Worked Hunt from Hypothesis to Action](#worked-hunt-from-hypothesis-to-action) |
 | Endpoint process, hash, DNS, and firewall correlation | [EDR and CTI Correlation: Process to Firewall](#edr-and-cti-correlation-process-to-firewall) |
 | Email security: phishing, BEC, and investigation | [Threat Hunting with Email Security](#threat-hunting-with-email-security) |
@@ -241,7 +241,9 @@ Anomalies establish a reason to investigate. They do not establish attacker inte
 
 [Back to top](#threat-hunting-field-guide)
 
-## Wazuh / OpenSearch Threat Hunting Filter Field Guide
+<a id="wazuh--opensearch-threat-hunting-filter-field-guide"></a>
+
+## SIEM / Wazuh / OpenSearch Filter Cheat Sheet
 
 **Question → source → confirmed field → filter → raw-event verification → correlation.**
 
