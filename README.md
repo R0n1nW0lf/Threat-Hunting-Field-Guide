@@ -37,6 +37,8 @@ Use these links to jump directly to the section you need during a hunt.
 | Wazuh/OpenSearch fields and filters | [Wazuh / OpenSearch Threat Hunting Filter Field Guide](#wazuh--opensearch-threat-hunting-filter-field-guide) |
 | A complete example hunt | [Worked Hunt from Hypothesis to Action](#worked-hunt-from-hypothesis-to-action) |
 | Hands-on practice plans | [Ronald Hands On Revisit Plans](#ronald-hands-on-revisit-plans) |
+| Email security: phishing, BEC, and practical lab | [Threat Hunting with Email Security — Study Notes](#threat-hunting-with-email-security--study-notes) |
+| DNS security: Lessons 1–3 | [Threat Hunting with DNS — Lessons 1–3](#threat-hunting-with-dns--lessons-13) |
 | Hunt notes/report template | [Editable Hunt Worksheet](#editable-hunt-worksheet) |
 
 [Back to top](#threat-hunting-field-guide)
