@@ -629,11 +629,41 @@ Keep this table on a dedicated notes screen during investigations. These example
 
 ## Threat Hunting with Email Security
 
-**Core topics:** phishing, spam, malware, spoofing, BEC, email log collection, signature/behavior detection, sandboxing, real-time and retrospective analysis, and abnormal outbound email hypotheses. BEC can involve impersonation or a compromised business account without malware.
+Email investigations begin with a question: **Did this message reach anyone, and did anything suspicious happen afterward?** Work from the message record outward. Do not label an endpoint compromised merely because a suspicious email exists.
 
-**Practical lab, Aug 8–13, 2024:** Investigated incoming messages from .top sender domains. Correct date and organization filters reduced the initial all-time count of 11 to **5**; **2 allowed**, **3 quarantined**. Correlated an allowed message with a Sysmon Event ID 22 DNS query on David-PC, a firewall HTTP allow event, and a Sysmon Event ID 1 process with Company Name Unknown. Threat intelligence supplied an APT tag, but attribution and process-hash matching require independent verification.
+### What to examine
 
-**Key checks:** Sender domain, recipient, final action, date scope, Sysmon queryName/queryResults/image, agent.ip, firewall source/destination/action, process image/company/hashes. Allowed email does not prove opened or clicked; DNS resolution does not prove browsing; firewall allow does not prove successful execution.
+| Question | Evidence to inspect |
+| --- | --- |
+| Who sent it, and who received it? | Sender address and domain, recipients, message timestamp, headers, and authentication results |
+| Did the security gateway stop it? | Disposition or final action: blocked, quarantined, or allowed |
+| What was the lure? | Subject, URLs, attachments, requested action, and impersonated organization |
+| Did activity follow delivery? | Endpoint DNS queries, browser or mail-client events, process creation, network connections, and relevant account activity |
+| Could the sender or account be impersonated or compromised? | Authentication patterns, mailbox rules, unusual payment requests, unexpected recipients, and changed communication behavior |
+
+### Investigation workflow
+
+1. **Define the scope.** Select the affected mailbox or domain and exact investigation window. Confirm the environment before counting matches.
+2. **Review the message.** Inspect the sender domain, recipient, final action, URLs, attachments, and available authentication checks. Similar-looking domains deserve investigation, not automatic conviction.
+3. **Separate gateway outcomes from user actions.** A message marked allowed may have reached a mailbox, but that does not establish that a person opened it, followed a link, or ran a file.
+4. **Pivot to the endpoint.** Search for DNS queries involving the suspicious domain, then determine the host and originating process. Check process creation and network events around the same time.
+5. **Correlate the network path.** Compare DNS results with firewall destination IP, source IP, port, action, and timestamps. Inspect every relevant event rather than attributing an unrelated connection to the recipient.
+6. **Enrich and validate.** Use threat intelligence as a lead. Match file hashes against the *actual recorded endpoint hashes* before claiming the executable matches a known indicator.
+7. **Report what is supported.** Document whether the email was blocked or allowed, which hosts showed related behavior, the strongest evidence, alternative explanations, and remaining visibility gaps.
+
+### Patterns and interpretation
+
+| Observation | Analyst interpretation |
+| --- | --- |
+| Lookalike sender domain | Potential impersonation or phishing; inspect full message context |
+| High outbound email volume | Possible compromised account or authorized bulk sending; compare to baseline |
+| Unexpected mailbox forwarding rule | Possible persistence or legitimate configuration; confirm ownership |
+| Mail-client process from unusual path | Investigative lead; validate publisher, signature, hash, and process lineage |
+| DNS request to a domain in the email | Lookup occurred; it does not by itself establish a click |
+| Firewall action `allow` | Traffic was permitted at that control; not proof of malware execution |
+| Intelligence tag on a domain, IP, or hash | Indicator association; not independent proof of attacker identity |
+
+**Rule of evidence:** Received, allowed, opened, clicked, downloaded, and executed are different stages. Verify each transition independently before reporting it as fact.
 
 [Back to top](#threat-hunting-field-guide)
 
