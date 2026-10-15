@@ -37,8 +37,8 @@ Use these links to jump directly to the section you need during a hunt.
 | Wazuh/OpenSearch fields and filters | [Wazuh / OpenSearch Threat Hunting Filter Field Guide](#wazuh--opensearch-threat-hunting-filter-field-guide) |
 | A complete example hunt | [Worked Hunt from Hypothesis to Action](#worked-hunt-from-hypothesis-to-action) |
 | Hands-on practice plans | [Ronald Hands On Revisit Plans](#ronald-hands-on-revisit-plans) |
-| Email security: phishing, BEC, and practical lab | [Threat Hunting with Email Security — Study Notes](#threat-hunting-with-email-security--study-notes) |
-| DNS security: Lessons 1–3 | [Threat Hunting with DNS — Lessons 1–3](#threat-hunting-with-dns--lessons-13) |
+| Email security: phishing, BEC, and investigation | [Threat Hunting with Email Security](#threat-hunting-with-email-security) |
+| DNS security: attacks, detection, and investigation | [Threat Hunting with DNS](#threat-hunting-with-dns) |
 | Hunt notes/report template | [Editable Hunt Worksheet](#editable-hunt-worksheet) |
 
 [Back to top](#threat-hunting-field-guide)
@@ -627,9 +627,9 @@ Keep this table on a dedicated notes screen during investigations. These example
 [Back to top](#threat-hunting-field-guide)
 
 
-## Threat Hunting with Email Security — Study Notes
+## Threat Hunting with Email Security
 
-**Lessons 1–4 completed.** Covered phishing, spam, malware, spoofing, BEC, email log collection, signature/behavior detection, sandboxing, real-time and retrospective analysis, and abnormal outbound email hypotheses. BEC can involve impersonation or a compromised business account without malware.
+**Core topics:** phishing, spam, malware, spoofing, BEC, email log collection, signature/behavior detection, sandboxing, real-time and retrospective analysis, and abnormal outbound email hypotheses. BEC can involve impersonation or a compromised business account without malware.
 
 **Practical lab, Aug 8–13, 2024:** Investigated incoming messages from .top sender domains. Correct date and organization filters reduced the initial all-time count of 11 to **5**; **2 allowed**, **3 quarantined**. Correlated an allowed message with a Sysmon Event ID 22 DNS query on David-PC, a firewall HTTP allow event, and a Sysmon Event ID 1 process with Company Name Unknown. Threat intelligence supplied an APT tag, but attribution and process-hash matching require independent verification.
 
@@ -637,17 +637,17 @@ Keep this table on a dedicated notes screen during investigations. These example
 
 [Back to top](#threat-hunting-field-guide)
 
-## Threat Hunting with DNS — Lessons 1–3
+## Threat Hunting with DNS
 
-**Lesson 1:** DNS tunneling, cache poisoning, amplification, typosquatting, hijacking, and rebinding. Hunting leads include unusually long or frequent queries, unexpected answers, lookalike domains, DNS configuration changes, and public-to-private answer changes.
+**DNS attack techniques:** DNS tunneling, cache poisoning, amplification, typosquatting, hijacking, and rebinding. Hunting leads include unusually long or frequent queries, unexpected answers, lookalike domains, DNS configuration changes, and public-to-private answer changes.
 
-**Lesson 2:** DNS security systems support anomaly detection, malicious-domain blocking, tunneling detection, real-time monitoring, machine learning, behavioral baselines, threat intelligence, and SIEM correlation.
+**DNS security capabilities:** DNS security systems support anomaly detection, malicious-domain blocking, tunneling detection, real-time monitoring, machine learning, behavioral baselines, threat intelligence, and SIEM correlation.
 
-**Lesson 3:** Collect DNS query/response logs, centralize in SIEM, establish normal baselines, and compare real-time with retrospective analysis. Useful Sysmon fields: `data.win.system.eventID` (22), `data.win.eventdata.queryName`, `data.win.eventdata.queryResults`, `data.win.eventdata.image`, and `agent.ip`. Examine query frequency, domains, response codes, and endpoint/firewall context.
+**DNS investigation workflow:** Collect DNS query/response logs, centralize in SIEM, establish normal baselines, and compare real-time with retrospective analysis. Useful Sysmon fields: `data.win.system.eventID` (22), `data.win.eventdata.queryName`, `data.win.eventdata.queryResults`, `data.win.eventdata.image`, and `agent.ip`. Examine query frequency, domains, response codes, and endpoint/firewall context.
 
 **Evidence cautions:** DNS query is not proof of a click or successful connection; anomalous DNS activity alone is not proof of tunneling or exfiltration.
 
-**Next:** Lesson 4, DNS Queries and Data Exfiltration Hypothesis (not yet completed).
+**Investigation topic to expand:** DNS queries and potential data exfiltration.
 
 [Back to top](#threat-hunting-field-guide)
 
