@@ -4,6 +4,8 @@ A practical reference for SOC analysts investigating endpoint, network, authenti
 
 **The tool provides evidence. The analyst decides what the evidence means.**
 
+**QUICK FIND:** [SIEM / Wazuh / OpenSearch Filter Cheat Sheet](#wazuh--opensearch-threat-hunting-filter-field-guide) · [All handbook sections](#quick-find)
+
 **START HERE:** [Step-by-Step Evidence Tracking: Evidence First](#step-by-step-evidence-tracking-evidence-first) — learn how to locate, narrow, correlate, and verify evidence.
 
 ## How to use this handbook
@@ -29,7 +31,7 @@ Use these links to jump directly to the section you need during a hunt.
 | Firewall threat hunting: baselines and outbound hypothesis | [Threat Hunting with Firewalls: Outbound Connection Hypothesis](#threat-hunting-with-firewalls-outbound-connection-hypothesis) |
 | Source country vs IP geolocation fields | [Country Field Comparison](#country-field-comparison) |
 | SIEM source/destination field cheat sheet | [SIEM Field Quick Reference: Traffic Direction](#siem-field-quick-reference-traffic-direction) |
-| Wazuh/OpenSearch fields and filters | [Wazuh / OpenSearch Threat Hunting Filter Field Guide](#wazuh--opensearch-threat-hunting-filter-field-guide) |
+| SIEM/Wazuh/OpenSearch filter cheat sheet: question → field → example → verification | [Wazuh / OpenSearch Threat Hunting Filter Field Guide](#wazuh--opensearch-threat-hunting-filter-field-guide) |
 | A complete example hunt | [Worked Hunt from Hypothesis to Action](#worked-hunt-from-hypothesis-to-action) |
 | Endpoint process, hash, DNS, and firewall correlation | [EDR and CTI Correlation: Process to Firewall](#edr-and-cti-correlation-process-to-firewall) |
 | Email security: phishing, BEC, and investigation | [Threat Hunting with Email Security](#threat-hunting-with-email-security) |
@@ -241,116 +243,153 @@ Anomalies establish a reason to investigate. They do not establish attacker inte
 
 ## Wazuh / OpenSearch Threat Hunting Filter Field Guide
 
-These examples use field/value filters and query-string patterns. Select the matching search mode in Discover; DQL, Lucene query strings, and filter controls have different behavior. Confirm field types and ruleset-specific group values before combining conditions. See the [OpenSearch query-string reference](https://docs.opensearch.org/latest/query-dsl/full-text/query-string/).
+**Question → source → confirmed field → filter → raw-event verification → correlation.**
 
-Use fields to translate a hunting question into evidence. Do not memorize filter combinations without understanding what each field represents.
+This cheat sheet is a starting point for investigations, not a universal schema. Wazuh alert metadata, decoder output, vendor logs, and normalized SIEM documents have different fields. Every example assumes that the named field and sample value exist in the selected data. Addresses, hostnames, accounts, and signatures below are illustrative; replace them with observed values.
 
-| Field | Meaning | Threat hunting use |
+### Establish source and field availability
+
+1. Select the index pattern/data view and a time range containing a known event. Wazuh alerts are detections, not a complete record of all collected activity. Archives require separate collection and indexing configuration; inventory/state indices answer different questions.
+2. Expand representative events from **each** source. Record the index, timestamp, `agent.id/name/ip`, `location`, `decoder.name`, `predecoder.program_name`, and rule metadata where present.
+3. Check the mapping: keyword versus analyzed text, numeric versus string, date versus text, and IP versus keyword. A field visible in JSON may be unindexed or unavailable in another index. Do not add `.keyword` unless that subfield exists.
+4. Confirm exact spelling, capitalization, group membership, and sample values. `rule.groups` is plural and usually an array; `rule.group` is not a substitute. Groups describe rule classifications, not necessarily vendor product names.
+5. Use a known record to test each filter before combining conditions. Decoder/rule testing with [wazuh-logtest](https://documentation.wazuh.com/current/user-manual/ruleset/testing.html) checks extraction and matching; it does not verify downstream indexing or enrichment.
+
+| Source | Fields to inspect when present | Availability boundary |
 | --- | --- | --- |
-| `rule.groups` | Category Wazuh assigned to an event | Narrow the hunt to event types such as `firewall`, `sshd`, `authentication_failed`, or `yum`. |
-| `rule.description` | Human-readable reason the rule fired | Quickly understand what Wazuh detected. |
-| `rule.id` | Wazuh rule number | Find events produced by one specific detection rule. |
-| `rule.level` | Wazuh alert severity | Help prioritize events while retaining context. |
-| `data.srcip` | Source IP | Identify where traffic or activity originated. |
-| `data.dstip` | Destination IP | Identify the host or network being targeted. |
-| `data.srcport` | Source port | Inspect the originating side of a network connection. |
-| `data.dstport` | Destination port | Identify the targeted service or port, such as 22 for SSH. |
-| `data.action` | Device action | Filter firewall decisions such as `allow`, `accept`, or `deny`. |
-| `data.service` | Identified service | Add protocol/service context such as SSH. |
-| `agent.ip` | IP of the Wazuh-monitored host reporting the event | Identify which monitored endpoint produced/reported the event. |
-| `agent.name` | Name of the monitored host | Hunt activity on a named system such as `webserver`. |
-| `data.dstuser` | Target/destination account | Identify which user account was targeted. |
-| `predecoder.program_name` | Program that generated the log | Identify sources such as `sshd` or `yum`. |
-| `full_log` | Original/raw log message | Verify details that parsed fields may not fully expose. |
-| `data.audit.command` | Command recorded by Linux Audit | Identify an executed command such as `nmap`. |
-| `data.audit.exe` | Executable path | Verify which executable actually ran. |
-| `data.audit.execve.a0`, `a1`, `a2`... | Command-line arguments | Reconstruct exactly how a command was executed and what it targeted. |
+| Wazuh alerts | `rule.groups/description/id/level`, `agent.*`, `decoder.name`, `location`, `full_log` | Metadata describes the alert and reporting context; manager-local events may use agent ID `000`. |
+| Firewall, WAF, IPS/IDS | `data.srcip/dstip/srcport/dstport/action`; vendor-specific fields | Decoder-dependent. ECS pipelines may instead use `source.ip`, `destination.ip`, `event.action`; verify rather than mixing schemas. |
+| Windows via Wazuh EventChannel | `data.win.system.*`, `data.win.eventdata.*` | Provider, channel, event type, and collection settings determine payload fields. |
+| Linux service/syslog | `predecoder.program_name`, `data.srcip`, `data.dstuser`, rule groups | SSH, VPN, and FTP parsers need not expose the same account or result fields. |
+| Linux Audit | `data.audit.*` | Requires audit rules, collection, and compatible decoding; argument coverage varies. |
+| Package/inventory data | Package-manager messages or inventory/state fields | Inventory presence is different from a historical installation event. |
+| Enrichment | `GeoLocation.country_name`, source-specific country fields | Optional pipeline output; determine the enriched IP and database provenance. |
 
-### Critical field distinction
+### Discover search mode and syntax
 
-`agent.ip` is not the same thing as `data.srcip` or `data.dstip`.
+Read the language selector before pasting a query. OpenSearch Discover offers DQL and Lucene query-string modes; Kibana KQL, Splunk SPL, SQL/PPL, and JSON Query DSL are separate languages. Filter controls are useful for selecting recorded values and avoiding escaping mistakes. Search-bar filters do not perform joins or calculate distinct counts.
 
-- `data.srcip` = where the activity came from.
-- `data.dstip` = where the activity was going.
-- `agent.ip` = which Wazuh-monitored endpoint reported the event.
+| Intent | DQL | Lucene query string |
+| --- | --- | --- |
+| Match a group | `rule.groups: sshd` | `rule.groups:sshd` |
+| Require two conditions | `rule.groups: sshd AND data.srcip: "192.0.2.10"` | `rule.groups:sshd AND data.srcip:"192.0.2.10"` |
+| Either group | `rule.groups: (sshd OR firewall)` | `rule.groups:(sshd OR firewall)` |
+| Field exists | `data.srcip:*` | `_exists_:data.srcip` |
+| Present but not a value | `data.action:* AND NOT data.action: deny` | `_exists_:data.action AND NOT data.action:deny` |
+| Numeric threshold | `rule.level >= 10` | `rule.level:[10 TO *]` |
+| Prefix term | `agent.name: web*` | `agent.name:web*` |
+| Absolute date interval, if time field is `timestamp` | `timestamp >= "2026-01-01T00:00:00Z" AND timestamp < "2026-01-02T00:00:00Z"` | `timestamp:[2026-01-01T00:00:00Z TO 2026-01-02T00:00:00Z}` |
 
-Illustrative pivot: `data.srcip: 172.16.8.190` searches for activity attributed to that source address; inspect the records before deciding whether it represents lateral movement. An `agent.ip` such as `10.10.10.22` identifies the monitored destination system reporting that SSH attempt. Filtering only on `agent.ip: 172.16.8.190` can therefore hide evidence generated by the destination hosts.
+Use explicit Boolean operators and parentheses. Negation alone can include records missing the field. Quoted text on an analyzed field is a phrase search, not byte-for-byte equality; use a confirmed keyword field or appropriate exact-value filter when required. Escape reserved characters in paths, URLs, and combined hash values. Wildcards inside quoted phrases are not wildcard searches. DQL supports `*`; Lucene also supports `?`, with different capabilities and restrictions. Check version/settings and scope expensive leading-wildcard searches. See the [official DQL and Lucene comparison](https://docs.opensearch.org/latest/dashboards/dql/).
 
-### Build filters from the hunting question
+**Examples in the following tables use DQL unless explicitly labeled Lucene.** Where a row requires a source constraint, add the source/decoder/location filter established from your own records.
 
-Use this reasoning chain:
+### Rule, host, and raw evidence questions
 
-**Question → evidence type → source/destination → action/result → filter → inspect raw evidence**
+| Analyst question | Field/filter | Example | Verification |
+| --- | --- | --- | --- |
+| Which category should I start with? | `rule.groups` | `rule.groups: sshd` | Inspect the array and description; installed rules determine group values. |
+| What did the detection describe? | `rule.description` | `rule.description: "authentication failed"` | Read the complete description and raw event; wording and analysis affect matches. |
+| Which events share this detection? | `rule.id` | `rule.id: "5710"` | Use an ID from a known event and inspect its installed rule; IDs are Wazuh detections, not vendor signatures. |
+| Which alerts merit priority review? | `rule.level` | `rule.level >= 10` | Confirm numeric mapping; severity is a triage aid, not proof of compromise. |
+| Which monitored endpoint reported it? | `agent.id/name/ip` | `agent.id: "007"` or `agent.name: "web01"` | Check asset identity and address history; the agent may collect logs for another device. |
+| Which application or collector produced it? | `predecoder.program_name`, `decoder.name`, `location` | `predecoder.program_name: sshd` | Compare original header, decoder, and collection path; predecoder fields may be absent for JSON/EventChannel logs. |
+| What detail was not parsed? | `full_log` | `full_log: "Failed password"` | Inspect the complete message and source record. Text search is a lead; `full_log` may be omitted or not searchable. |
+| Which ATT&CK mapping accompanies it? | `rule.mitre.id/technique/tactic` when present | `rule.mitre.id: "T1059.001"` | Validate actual behavior against the mapping; absence of a tag does not exclude the behavior. |
 
-Example: “Find failed SSH authentication originating from 172.16.8.190.”
+**Critical distinction:** `agent.ip` identifies reporting context; `data.srcip` and `data.dstip` identify addresses decoded from the event. In an SSH log, the monitored server can be the destination even when no `data.dstip` exists.
 
-1. Evidence type: SSH → `rule.groups: sshd`
-2. Origin: 172.16.8.190 → `data.srcip: 172.16.8.190`
-3. Result: failed authentication → `rule.groups: authentication_failed`
-4. Inspect the matching events and `full_log`; do not treat the filter itself as the conclusion.
+### Network, WAF, IPS/IDS, firewall, and country questions
 
-Practical rule: first understand what the question is asking, then identify which field represents each part of the question. Use the filtered results as evidence and verify the underlying event before reporting a conclusion.
+| Analyst question | Field/filter | Example | Verification |
+| --- | --- | --- | --- |
+| Where did this activity originate? | `data.srcip` if decoded | `data.srcip: "192.0.2.10"` | Validate observation point, NAT/proxy context, and raw source address. |
+| Which destination was contacted? | `data.dstip` if decoded | `data.dstip: "203.0.113.20"` | Identify the source host too; many hosts can share a destination. |
+| Which service/port was targeted? | `data.dstport`; `data.srcport` for sender port | `data.dstport: 22 AND data.srcip: "192.0.2.10"` | Check field type, protocol, and direction; a port is not an authentication outcome. |
+| What did the firewall decide? | Confirmed firewall source plus `data.action` | `rule.groups: firewall AND data.action: (deny OR dropped)` | Use actual action values and policy/session context. Allowed traffic need not complete; a drop applies at that control. |
+| What WAF attack category was reported? | **Conditional** `data.attacktype` or actual parser field | `data.attacktype: "SQL Injection"` | First inspect a WAF event showing this exact key/value. Check request URI, method, rule match, action, and application response. |
+| Which WAF/IPS signature repeated? | **Conditional** `data.attackid` or vendor signature field | `data.attackid: "12345"` | Verify product, parser, signature name/version, and raw ID. This is not a Wazuh `rule.id` or MITRE technique ID. |
+| Which IDS alerts concern this peer? | Confirmed IDS source; signature and tuple fields | `data.srcip: "192.0.2.10" AND data.dstip: "203.0.113.20"` plus source filter | Inspect signature logic, ports, protocol, sensor placement, and packet/flow evidence; alert does not imply prevention. |
+| Did an IPS enforce a block? | Confirmed IPS source and recorded action | `data.action: dropped` plus IPS source filter | Check inline enforcement and matching session. Alert-only deployments do not block. |
+| What country did the device assign to the source? | Conditional `data.srccountry` | `data.srccountry: "United States"` | Compare raw device record and source IP; use `data.dstcountry` only if actually parsed and needed. |
+| What country did enrichment assign? | Conditional `GeoLocation.country_name` | `GeoLocation.country_name: "United States"` | Verify which IP was enriched, database age, and disagreement with device values; country is not actor location. |
 
-### Correlating VPN, SSH, FTP, and Linux Audit evidence
+**WAF parser checkpoint:** `data.attacktype` and `data.attackid` are examples of possible decoded keys, not standard fields guaranteed for every WAF. A vendor can log an attack ID without the installed decoder extracting it. Inspect both the raw message and indexed document, test the installed decoder, then use the actual searchable path. Do not substitute `data.attack`, a nested signature path, or an ECS field without checking it. The [Wazuh FortiGate decoder source](https://github.com/wazuh/wazuh/blob/master/ruleset/decoders/0100-fortigate_decoders.xml) illustrates how extraction depends on message format; compare against the deployed version.
 
-**Translate question wording into stacked filters.** Break the question into evidence concepts, then map each concept to a field or rule group. For example, a service can map to a service-specific `rule.groups` value, a successful login to `authentication_success`, and an account name to `data.dstuser`. Stack only filters justified by the question, then inspect the remaining event.
+### Windows process, DNS, network, and hash questions
 
-**Use rule groups to narrow behavior before searching raw text.** Service and behavior groups such as `ftp`, `sshd`, `audit`, `authentication_success`, and `authentication_failed` can quickly reduce the event population. Remove filters that belong to a previous question when the new question changes the behavior being investigated.
+For every Sysmon row, constrain the source to the verified Sysmon provider/channel, for example `data.win.system.providerName: "Microsoft-Windows-Sysmon"` when that path exists. Event IDs are provider-specific. Confirm collection and configuration before interpreting a missing event.
 
-**Do not confuse hit count with unique count or frequency.** A question asking for the “most frequent” value requires counting occurrences across the full result set. A question asking for “unique destinations” requires counting distinct destination values. Visible rows or total hits alone are not proof.
+| Analyst question | Field/filter | Example | Verification |
+| --- | --- | --- | --- |
+| What process was created? | Sysmon Event 1; `image`, `commandLine`, parent and user fields | `data.win.system.eventID: "1" AND agent.name: "web01"` plus Sysmon source | Read `data.win.eventdata.image/commandLine/parentImage/parentCommandLine/user`; preserve paths and arguments. |
+| Did a process use an encoded command? | Event 1 and command line | `data.win.eventdata.commandLine: *EncodedCommand*` plus Event 1/source | Inspect complete invocation; decode recorded bytes safely, then corroborate effects. |
+| Which process requested a domain? | Sysmon Event 22; `queryName` | `data.win.system.eventID: "22" AND data.win.eventdata.queryName: "example.org"` plus Sysmon source | Inspect `image`, `processGuid`, `queryStatus`, and `queryResults` when available; lookup is not proof of a click or connection. |
+| Which subdomains were queried? | Event 22, domain field | `data.win.eventdata.queryName: *.example.org` plus Event 22/source | Review full names; search apex `example.org` separately. Check case, trailing dot, mapping, and process. |
+| Which IP/port did a process contact? | Sysmon Event 3; endpoint-specific address fields | `data.win.system.eventID: "3" AND data.win.eventdata.destinationIp: "203.0.113.20"` plus Sysmon source | Inspect `sourceIp/destinationIp/sourcePort/destinationPort/protocol/initiated/image/processGuid`. Network-event configuration affects visibility. |
+| What connects DNS, process, and network events? | `agent.id` plus `data.win.eventdata.processGuid` | `agent.id: "007" AND data.win.eventdata.processGuid: "<observed-guid>"` | Remove the Event ID constraint to view the sequence. Prefer GUID and host over PID alone; PIDs can be reused. |
+| Which executable hash was recorded? | Event 1; conditional `data.win.eventdata.hashes` | `data.win.eventdata.hashes:*` plus Event 1/source | Read algorithm labels and complete digests; configured algorithms and event type determine availability. |
+| Which FIM record matches a digest? | Conditional `syscheck.sha256_after` or actual hash field | `syscheck.sha256_after: "<complete-sha256>"` | Confirm algorithm, before/after meaning, path, and event time. A FIM match is not evidence of execution. |
 
-**Use `full_log` as a fallback for unparsed evidence.** Wazuh may parse many useful fields while leaving another needed value only in the original log. If the expected field is missing, inspect `full_log` before concluding that the evidence is unavailable. Raw logs may include numeric UIDs and account names. Verify the host account mapping rather than assuming an event supplied both.
+See [Microsoft's Sysmon event reference](https://learn.microsoft.com/en-us/sysinternals/downloads/sysmon) for event semantics and configuration.
 
-**Correlate by time, not just by IP or username.** The same address or account can appear in unrelated activity elsewhere in the hunting window. Anchor pivots to the relevant session or event time and follow activity forward or backward from that point.
+### Authentication, Linux Audit, and package questions
 
-**Pivot across telemetry instead of expecting one log source to answer everything.** A practical chain can move from VPN authentication to a tunnel IP, then firewall traffic, SSH authentication, and finally endpoint Audit events. Each source answers a different part of the story.
+| Analyst question | Field/filter | Example | Verification |
+| --- | --- | --- | --- |
+| Which SSH logins failed from this IP? | Verified `sshd` and failure groups plus origin | `rule.groups: sshd AND rule.groups: authentication_failed AND data.srcip: "192.0.2.10"` | Inspect `full_log`, target account, method, host, and timestamps; distinguish invalid user from bad credentials. |
+| Did a successful SSH login follow? | Verified success group, host, origin/account | `rule.groups: sshd AND rule.groups: authentication_success AND agent.name: "linux01"` | Confirm accepted authentication and session timing; an earlier failure and later success may involve different users. |
+| Which account was targeted? | Conditional `data.dstuser` or source's user field | `data.dstuser: "analyst"` plus authentication source | Validate account role, realm, and raw spelling; not every parser uses `dstuser`. |
+| Who connected over VPN? | Actual VPN decoder/source; user, outcome, session, assigned address | `data.srcip: "192.0.2.10"` plus verified VPN source | Inspect external peer versus tunnel-assigned IP, account, MFA result, session ID, connect/disconnect times. There is no universal VPN field/group. |
+| Which FTP authentications failed or succeeded? | Actual FTP source and verified outcome groups | `rule.groups: ftp AND rule.groups: authentication_failed` **only if both groups occur** | Confirm daemon, account, client address, raw response, and session; firewall TCP/21 traffic does not prove a login. |
+| What Linux command ran? | Conditional `data.audit.command/exe` | `data.audit.exe: "/usr/bin/id"` plus Audit source | Inspect syscall success/exit and records from the same audit event; command spelling alone is insufficient. |
+| What arguments and targets were used? | `data.audit.execve.a0/a1/a2` and later args | `data.audit.execve.a0: "nmap"` when recorded | Reconstruct all available arguments in order; check argc, encoding, truncation, and related CWD/PATH records. |
+| Which identity executed it? | Conditional `data.audit.auid/uid/euid` and session fields | `data.audit.auid: "1001"` when parsed | Map numeric IDs on that host at that time. Login identity, real UID, and effective UID have different meanings. |
+| Was a configuration file changed before restart? | Same host/time; Audit execution/write records and FIM | `agent.name: "linux01" AND data.audit.execve.a1: "/etc/ssh/sshd_config"` when present | An editor argument indicates interaction, not a verified write. Confirm content change and service restart separately. |
+| Was a package installed? | Actual yum/dnf/apt/dpkg logs; verified rule/program fields | `predecoder.program_name: yum` or `rule.groups: yum` if observed | Read transaction operation, package/version, outcome, user, and time; other package managers need their own source filters. |
+| Was an installation merely attempted? | Audit command execution versus package transaction outcome | `data.audit.execve.a0: "apt"` if present | Compare arguments and return status with package-manager logs. Inventory presence alone does not establish install time or actor. |
 
-**Understand endpoint-reported destinations.** In host-generated SSH events, `data.srcip` identifies the connecting system while `agent.ip` identifies the monitored endpoint whose SSH daemon reported the event. A destination does not always appear as `data.dstip`.
+Audit coverage depends on configured rules and collection. Consult [Wazuh's Audit collection guidance](https://documentation.wazuh.com/current/user-manual/capabilities/system-calls-monitoring/audit-configuration.html). Related records can be split or combined by the pipeline; correlate host plus audit serial/session and time where available.
 
-**Reconstruct Linux Audit commands from `execve` arguments.** `data.audit.command` may expose only the base command. Read `data.audit.execve.a0`, `a1`, `a2`, and later arguments in order to reconstruct the command line, identify command targets, or recover a full file path passed to an editor. For example, the arguments can distinguish running `ps` from searching its output for a particular process.
+### IOC and wildcard pivots
 
-**Follow configuration changes into service activity.** When a question asks what happened before a service restart, use the restart as a timeline anchor and inspect preceding Audit activity on the same endpoint. An editor command with a configuration-file argument identifies an attempted interaction with that path. Confirm an actual change through file integrity, audit write records, or a configuration comparison, and correlate the account and session.
+| Analyst question | Field/filter | Example | Verification |
+| --- | --- | --- | --- |
+| Where did an IP IOC appear? | Source and destination paths for each source | `data.srcip: "203.0.113.20" OR data.dstip: "203.0.113.20"` | Run equivalent Sysmon/ECS searches separately when schemas differ; classify origin versus destination. |
+| Where did a domain IOC appear? | DNS name, proxy host/URL, email URL fields actually present | `data.win.eventdata.queryName: "example.org"` plus Sysmon source | Check full name and observation type; domain resolution, delivery, and browsing are different actions. |
+| Is a hash embedded in a combined field? | Confirmed searchable combined hash field | **Lucene:** `data.win.eventdata.hashes:*SHA256\=<complete-sha256>*` | Replace placeholder with full digest. Escape literal `=` in Lucene; use an existing keyword representation for substring matching when possible. |
+| Can raw text locate a known record? | `full_log` scoped to source/host/time | `full_log: *<complete-hex-digest>*` after validating wildcard support | Compare algorithm and full digest in raw record. Analyzed text, leading-wildcard settings, or omitted raw logs can cause misses. |
 
-**Expand the correct event for enrichment.** Once the event is isolated, expanded fields can provide information not shown in the normal result row, such as IP geolocation. Treat enrichment as context associated with the event and keep the underlying source IP visible.
+Start with exact algorithm-specific fields when available. Use wildcards to discover representation problems, then confirm the complete value; a prefix or substring match is not a verified IOC match. Combined hashes may include SHA1, MD5, SHA256, or other configured algorithms. Keep algorithm, intelligence provenance, and observation time with the finding. Avoid bare all-field wildcard searches as a default; narrow the population and field first. See [OpenSearch query-string behavior](https://docs.opensearch.org/latest/query-dsl/full-text/query-string/) for escaping and wildcard controls.
 
-**SIEM value in threat hunting comes from collection, analysis, and correlation.** SIEM centralizes telemetry so hunters can connect user activity, network traffic, authentication, and endpoint evidence. SOAR complements SIEM by automating and orchestrating repeatable security workflows.
+### Time scopes, counts, and unique values
 
-### Discover an unknown Windows Event ID from the evidence
+| Analyst question | Field/filter or analysis | Example | Verification |
+| --- | --- | --- | --- |
+| What happened during the incident? | Discover time picker using confirmed date field | Absolute UTC window: 2026-01-01 00:00:00 to 2026-01-02 00:00:00 | Record displayed timezone, boundary inclusion, and chosen field. Wazuh `timestamp`, source event time, and `@timestamp` are not automatically equivalent. |
+| What happened around an anchor event? | Same entity; widen before/after timestamp | Host plus a window five minutes before and after the event | Allow for clock skew, ingestion delay, and long sessions; justify window size. |
+| How many records matched? | Total document count under saved filters/time | Count failed-authentication alert documents | Check result caps, duplicate ingestion, and aggregated alerts; document count is not always attempt/session count. |
+| Which value occurred most often? | Terms aggregation with document counts | Group failures by confirmed source-IP field | Top values can omit the long tail. Increase limits/check other buckets; define tie handling and denominator. |
+| How many distinct destinations/hosts/users? | Cardinality or complete deduplicated export | Unique `data.dstip` among this source's records | Cardinality can be approximate; use exhaustive deduplication when exactness matters. Missing fields do not become known entities. |
+| Is the rate unusual? | Date histogram and relevant entity grouping | Failures per five-minute interval, compared with prior comparable periods | Normalize for coverage, interval, host role, and working hours; separate document rate from true activity rate. |
 
-When a hunting question points to a host or behavior but you do **not** know the Event ID, identify the provider, channel, and event content before choosing a numeric filter. Pivot from evidence you already proved.
+If results unexpectedly disappear, clear stale pinned filters, confirm index selection and retention, widen time, and test a known record. Remove one constraint at a time. An empty search supports only “no matching indexed records under these conditions,” not “the activity never occurred.”
 
-**Method: known condition → agent/host → all host telemetry → enumerate Event IDs → inspect behavior → identify the matching Event ID**
+### Cross-source correlations and verification
 
-1. Start with the event that established the condition, such as a system-monitoring alert.
-2. Extract the affected hostname or agent name.
-3. Remove the source-specific filter if it would hide other telemetry. For example, after identifying a host from a Zabbix alert, remove the Zabbix-only filter before investigating Windows events.
-4. Search the affected host across the full hunting time window.
-5. Open the available `data.win.system.eventID` field and enumerate the Event IDs present in the narrowed dataset.
-6. Filter or inspect those Event IDs and read their underlying event output.
-7. Match the event behavior to the hunting question. If the question asks what application was installed, look for an event whose data actually identifies an installation/application.
-8. Once the matching event is found, record its Event ID and use that ID as a repeatable filter for similar telemetry.
+Discover filters select documents; they do not automatically join related events. Build a timeline using stable entities and independent checks.
 
-Record the provider and channel along with the Event ID: numbers are not globally unique across Windows event providers. Confirm that the event describes the behavior being investigated rather than selecting an ID from memory.
+| Analyst question | Pivot/filter | Example sequence | Verification |
+| --- | --- | --- | --- |
+| Did a VPN session lead to internal activity? | Account, assigned tunnel IP, session interval | VPN success → assigned IP → firewall tuple → SSH login → Audit activity | Confirm address lease at event time, NAT, target host, account/session, and clock alignment. |
+| Did a process resolve and contact a destination? | Host + process GUID, then time and network tuple | Event 1 → Event 22 → Event 3 → firewall session | Compare DNS answer valid then, host addresses, protocol, ports, and direction; shared IP alone is weak linkage. |
+| Did an email lead to endpoint execution? | Recipient/host mapping, domain/hash, narrow timeline | Delivery → DNS/browser evidence → file/hash → process creation | Verify each transition independently; delivery or lookup does not establish a click or execution. |
+| Did a WAF/IDS alert correspond to application impact? | Request/session ID if present; tuple, URL, time | Signature alert → enforcement action → application/access logs → endpoint activity | Match the same request/flow and inspect response or host effects; a signature label does not prove successful exploitation. |
+| Did a login precede installation or changes? | Host, account/session, time | Authentication → Audit command → package transaction/FIM → service activity | Account names alone do not establish causality; confirm outcomes and approved change context. |
 
-Practical warning: a monitoring event may not contain the Windows Event ID at all. The monitoring alert is the starting condition; the endpoint telemetry is the next evidence source.
+Preserve useful investigative discipline: discover unknown Windows Event IDs by enumerating host telemetry and inspecting provider/channel/content; remove the original source filter when pivoting to another source. Reconstruct Audit arguments rather than relying on a base command. Test benign explanations, distinguish observations from inference, and use ATT&CK mappings to describe supported behavior.
 
-### Hunt embedded hash IOCs with wildcards
-
-When a known hash IOC is visibly present in telemetry but exact SIEM searches return zero results, test whether the hash is embedded inside a larger searchable value.
-
-If a bare hash or exact field match misses a known record, inspect the indexed representation and active search mode. A query-string pattern such as `*MD5=<hash>*` may help locate a hash embedded in a combined value; replace `<hash>` with a validated hexadecimal digest. This is a search pattern, not a known malicious indicator.
-
-**Why this matters:** Sysmon hash telemetry can be stored as a larger combined value containing multiple hash types, such as `SHA1=...,MD5=...,SHA256=...,IMPHASH=...`. An exact lookup for only the MD5 may therefore fail. In a compatible query-string search, leading and trailing `*` wildcards can match surrounding characters. Analyzer settings, default search fields, and leading-wildcard restrictions affect results; narrow by host and time and verify the raw hash value.
-
-Reusable hunting workflow:
-
-**CTI hash IOC → identify hash type → search `*<TYPE>=<hash>*` → inspect matching event → pivot to `agent.name`, image/path, process, user, and surrounding telemetry**
-
-Do not treat an exact-search miss as proof that an IOC is absent when the telemetry may store that IOC inside a larger field. Test the representation and wildcard search before concluding there is no match.
-
-**Use hypotheses as testable starting points, not conclusions.** Begin with data analysis and preliminary review, use relevant telemetry to test the hypothesis, and revise or create a new hypothesis when the evidence does not validate it. Do not force evidence to fit the original idea.
-
-**Use MITRE ATT&CK to describe behavior, then verify the underlying evidence.** ATT&CK Tactics, Techniques, and Procedures provide a common framework for hunting. A technique label such as Process Discovery is a useful pivot, but the audit or endpoint evidence should show what actually occurred.
+For every finding, save **question, index/data view, mode, exact query and filters, time boundaries/timezone, count definition, event references, raw values, correlation keys, competing explanation, and remaining gaps**. SIEM supports collection and correlation; SOAR can automate repeatable follow-up, while the analyst remains responsible for the conclusion.
 
 [Back to top](#threat-hunting-field-guide)
 
@@ -405,7 +444,7 @@ Use these Wazuh/OpenSearch filters to reconstruct an endpoint incident from obse
 - Extract the value following `-EncodedCommand` from the complete process command line. Base64 is an encoding, not encryption. PowerShell's `-EncodedCommand` normally expects UTF-16LE bytes; verify the original bytes and decoded text rather than assuming every Base64 string is UTF-16LE.
 - Read the decoded command to identify URLs, IPs, file paths, and intent. A download command is evidence of attempted download, not by itself proof of successful file creation or execution.
 - Look up extracted indicators in Threat Intel. Record the IOC type, source, tag/group attribution, and confidence. Attribution from an IOC tag is not independent proof of the operator.
-- Pivot from a threat-group IOC hash back into Sysmon process events. For a hash embedded in a combined `SHA1=...,MD5=...,SHA256=...` value, try `*SHA1=<hash>*` or `*MD5=<hash>*` in the Discover search bar. Confirm the matching event's `hashes` field before trusting it.
+- Pivot from a threat-group IOC hash back into Sysmon process events. For a hash embedded in a combined `SHA1=...,MD5=...,SHA256=...` value, use the mode-specific, field-scoped patterns in [IOC and wildcard pivots](#ioc-and-wildcard-pivots). Confirm the complete algorithm and digest in the matching event before trusting it.
 - In Sysmon Event 1, `image` identifies the created process; `parentImage` identifies the parent executable. `parentCommandLine` and process GUID/PID can help reconstruct the relationship.
 
 ### Correlate endpoint and firewall evidence
