@@ -37,6 +37,7 @@ Use these links to jump directly to the section you need during a hunt.
 | Email security: phishing, BEC, and investigation | [Threat Hunting with Email Security](#threat-hunting-with-email-security) |
 | Email-to-endpoint correlation and DDEI/Sysmon field examples | [Email-to-endpoint correlation: practical search patterns](#email-to-endpoint-correlation-practical-search-patterns) |
 | DNS security: attacks, detection, and investigation | [Threat Hunting with DNS](#threat-hunting-with-dns) |
+| Web attacks, WAF disposition, and practical investigation lessons | [Threat Hunting with Web Applications](#threat-hunting-with-web-applications) |
 | Hunt notes/report template | [Editable Hunt Worksheet](#editable-hunt-worksheet) |
 
 [Back to top](#threat-hunting-field-guide)
@@ -666,6 +667,53 @@ Start with two questions: **Which process requested this name, and what happened
 Test whether query labels plausibly carry data, whether the pattern repeats under a consistent domain, and which process generates it. Preserve full names and responses. Compare throughput and timing with ordinary application traffic and look for preceding file access or staging. Entropy, label length, or a tunneling alert alone cannot establish that sensitive information left the host. Record what data, if any, can actually be demonstrated in the observed requests and who controlled the destination only when supported.
 
 **Rule of evidence:** A lookup does not establish a user click, successful connection, malware execution, or exfiltration. A security product's block records enforcement at that control; check the host and other resolution paths before claiming the activity was fully prevented.
+
+[Back to top](#threat-hunting-field-guide)
+
+## Threat Hunting with Web Applications
+
+Start with the request, the control's decision, and the application's actual behavior. Correlate WAF, reverse-proxy/access, application, authentication, database, and endpoint logs within a defined time window. Preserve raw requests and responses where available; logging may omit bodies, truncate values, or hide traffic behind encryption.
+
+### Attack patterns and detection indicators
+
+| Pattern | What to hunt for | Verification and caveats |
+| --- | --- | --- |
+| SQL injection (SQLi) | SQL-like syntax in parameters, unusual query errors, repeated boolean variations, or abnormal response timing | Compare requests and responses with a baseline; correlate database/application errors and audit events. Syntax or a single slow response does not prove query manipulation. |
+| Cross-site scripting (XSS) | Script-like input, event-handler attributes, or encoded markup in URLs, forms, or stored content | Determine whether input reaches an executable browser context and whether execution occurred. Reflection alone does not prove XSS; server logs may miss DOM-based behavior. |
+| Cross-site request forgery (CSRF) | Unexpected state-changing requests under an authenticated session; missing/invalid anti-CSRF tokens or unexpected Origin/Referer | Validate token enforcement, session context, browser cookie behavior, and the actual state change. Missing headers alone are inconclusive. Controls include anti-CSRF tokens, appropriate SameSite cookies, and origin validation. |
+| Path traversal | Parent-directory sequences, encoded path separators, or requests for files outside the intended directory | Preserve the original value and inspect decoded forms carefully. Confirm server-side path handling and returned file content; a suspicious path alone is an attempt indicator. |
+| Brute force | Automated username/password guessing, bursts of failed logins, or failures followed by success | Group by account, source, and time; look for distributed guessing or password spraying. Correlate successful sessions and later activity; NAT, retries, and approved testing can distort counts. |
+| Distributed denial of service (DDoS) | Abnormal request/connection rates across many sources, concentrated endpoints, rising latency, errors, or resource exhaustion | Correlate traffic with service impact and baseline demand. Flash crowds can resemble attacks. Traffic filtering, rate limits, load balancing, and upstream mitigation reduce impact; load balancing alone cannot guarantee prevention. |
+
+Indicators are leads. Test authorized scans, application errors, ordinary user input, and maintenance as competing explanations.
+
+### WAF monitoring, filtering, and disposition
+
+A Web Application Firewall monitors and filters HTTP(S) traffic targeting web applications using configured rules and policies. Inspect the matched rule, attack category, request, enforcement mode, action, and upstream response. Use the existing [WAF field guidance](#network-waf-ipsids-firewall-and-country-questions) to confirm the deployed parser before filtering.
+
+- **Blocked:** the WAF reports enforcement against that request at its observation point. Verify the action's meaning and correlate origin logs; a block does not establish that all attempts or alternate paths were prevented.
+- **Passthrough / allowed:** the request was forwarded or allowed under the recorded policy. This may reflect monitoring mode, an exception, or a nonblocking rule; it does not prove exploitation.
+- Separate the WAF-generated response from the origin application's response. **HTTP 200 is not proof of a successful exploit**: it may contain an error, login page, generic response, or harmless reflection. Confirm content, state changes, database effects, or endpoint execution.
+
+### Practical investigation lessons
+
+The session completed investigations of **web shell upload, SQL injection, and exposed backup files**. Retain the evidence workflow rather than lab-specific answers:
+
+| Investigation | Reusable evidence chain |
+| --- | --- |
+| Suspected web shell upload | Upload request → application acceptance and file creation → stored path and file inspection → subsequent access → web-worker child processes, commands, or outbound connections. Distinguish an upload attempt, a stored file, and confirmed execution. |
+| SQL injection | Suspicious parameter → related request sequence → response/error/timing comparison → application/database corroboration → supported impact. Keep attempted injection separate from confirmed data access or modification. |
+| Exposed backup files | Requests for backup/archive paths → actual response content and size → intended access policy and file inventory → scope of sensitive data exposure. Distinguish discovery probes, publicly reachable files, and demonstrated retrieval. |
+
+For every pivot, record timestamps/time zone, target host, method, URI, source identity as observed, request/session IDs where available, and evidence references. Validate trusted proxy forwarding fields before treating an address as the original client. Preserve sensitive artifacts in controlled evidence storage rather than copying credentials or backup contents into the handbook.
+
+### Vulnerability scanners and intelligence context
+
+Vulnerability scanners identify potential weaknesses and provide remediation recommendations. Validate findings against the deployed application, configuration, and authorized scope; scanner output can contain false positives and does not establish that a weakness was exploited. Compare scan schedules and approved source ranges with observed traffic, then track remediation and retest.
+
+CTI can enrich an IP, domain, payload, or technique with source, observation date, and confidence. **A CTI actor association is not proof of attribution.** Shared infrastructure, reused tools, stale indicators, and spoofable request metadata require independent behavioral corroboration.
+
+**Learning checkpoint:** paused after **14 of 20 questions**, with **6 remaining**. The three practical investigations above are complete; remaining questions are pending.
 
 [Back to top](#threat-hunting-field-guide)
 
