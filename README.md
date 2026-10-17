@@ -35,6 +35,7 @@ Use these links to jump directly to the section you need during a hunt.
 | A complete example hunt | [Worked Hunt from Hypothesis to Action](#worked-hunt-from-hypothesis-to-action) |
 | Endpoint process, hash, DNS, and firewall correlation | [EDR and CTI Correlation: Process to Firewall](#edr-and-cti-correlation-process-to-firewall) |
 | Email security: phishing, BEC, and investigation | [Threat Hunting with Email Security](#threat-hunting-with-email-security) |
+| Email-to-endpoint correlation and DDEI/Sysmon field examples | [Email-to-endpoint correlation: practical search patterns](#email-to-endpoint-correlation-practical-search-patterns) |
 | DNS security: attacks, detection, and investigation | [Threat Hunting with DNS](#threat-hunting-with-dns) |
 | Hunt notes/report template | [Editable Hunt Worksheet](#editable-hunt-worksheet) |
 
@@ -595,6 +596,32 @@ Email investigations begin with a question: **Did this message reach anyone, and
 | Intelligence tag on a domain, IP, or hash | Indicator association; not independent proof of attacker identity |
 
 **Rule of evidence:** Received, allowed, opened, clicked, downloaded, and executed are different stages. Verify each transition independently before reporting it as fact.
+
+[Back to top](#threat-hunting-field-guide)
+
+### Email-to-endpoint correlation: practical search patterns
+
+Use this workflow when an email campaign may involve extortion, impersonation, phishing links, or suspicious endpoint activity. The field names below are **examples observed in a DDEI-to-Wazuh and Sysmon pipeline**, not universal names. Inspect a raw event before applying them elsewhere.
+
+| Investigation question | Candidate field or source | What to verify |
+| --- | --- | --- |
+| Which sender or service sent the message? | DDEI `data.srcuser`, sender domain | Inspect the complete address and message metadata; a service domain is not proof of sender identity. |
+| Who received it? | DDEI `data.dstuser` | Aggregate **unique recipient values**, not just the number of matching events. |
+| Was it delivered or quarantined? | DDEI `data.action_taken` | Separate `delivered` from `quarantined`; confirm final disposition and message ID where available. |
+| Did someone reply? | Reverse direction: `data.dstuser` equals original sender; inspect `data.srcuser` | Check `data.event_id` (for example `EMAIL_SEND`), subject/thread and timestamps. An outgoing message alone does not prove compromise. |
+| Does the subject contain a suspicious link? | DDEI `data.mail_subject`, extracted URL | Preserve the **full hostname** and compare its registered domain and spelling with the legitimate organization. |
+| Did an endpoint resolve the linked name? | Sysmon Event ID 22, `data.win.eventdata.queryName` | Confirm the queried hostname, `queryResults`, process image, user, timestamp and reporting endpoint. |
+| Who performed the DNS lookup? | `data.win.eventdata.user`, `data.win.eventdata.image`, `agent.ip` | Distinguish the account/process and querying host from the **DNS answer IP**; validate host attribution when fields disagree. |
+| Was related software installed? | Windows `MsiInstaller` event/message or software inventory | Confirm product name and successful installation in the original event. Presence of legitimate software alone is not malicious. |
+| Is an indicator associated with a threat actor? | CTI domain/IP/hash records | Record source, confidence and observation date; intelligence attribution is not independent proof of who sent the email. |
+
+**Discover, then narrow.** When the parser is unknown, a bounded wildcard search for an organization domain or a term such as `*install*` can help locate representative events. Inspect the raw event to discover the actual field path, then switch to precise field filters. Broad or leading wildcards may be expensive, incomplete, or unsupported depending on the search mode and mappings.
+
+**Count the right thing.** Event hits are not necessarily unique messages, recipients, or installations. Email detection and send records may describe related activity. Prefer a unique message identifier when available; use a terms/Top Values aggregation for distinct recipients, and inspect the underlying records.
+
+**Correlate in order.** Sender and recipients → delivery disposition → reply or other user interaction → subject URL and lookalike domain → endpoint DNS/process/user → network or browser evidence → any installation or execution → intelligence enrichment. Match host identity and timestamps at each pivot; don't connect events solely because they mention the same domain.
+
+**Evidence boundaries:** `delivered` does not mean opened; a reply is interaction but not credential theft; Sysmon DNS Event 22 establishes a lookup, not necessarily a click; a DNS answer is not the querying system; software installation does not establish malicious use; a CTI actor tag does not establish attribution. Escalate based on corroborated behavior and impact.
 
 [Back to top](#threat-hunting-field-guide)
 
